@@ -63,10 +63,12 @@ let zMirrorsOP;	// {op[0], op[1], ...} optical powers
 
 let xMin = -.5;
 let xMax = 0.5;
-let yMin = -.5;
-let yMax = 0.5;
+let yMin = 1.;
+let yMax = 2.;
 let zMin = -.5;
 let zMax = 0.5;
+
+let resonatorY = 1.5;
 	
 let fovScreen = 68;
 
