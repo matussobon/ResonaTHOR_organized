@@ -63,8 +63,8 @@ let zMirrorsOP;	// {op[0], op[1], ...} optical powers
 
 let xMin = -.5;
 let xMax = 0.5;
-let yMin = 1.;
-let yMax = 2.;
+let yMin = -.5;
+let yMax = 0.5;
 let zMin = -.5;
 let zMax = 0.5;
 
@@ -140,7 +140,19 @@ function init() {
 	// refreshGUI();
 	createGUI();
 
-	addXRInteractivity();
+	// check if VR is supported (see https://developer.mozilla.org/en-US/docs/Web/API/XRSystem/isSessionSupported)...
+	if (navigator.xr) {
+		navigator.xr.isSessionSupported("immersive-vr").then((isSupported) => {
+		  if (isSupported) {
+			// ... and enable the relevant features
+			renderer.xr.enabled = true;
+			// use renderer.xr.isPresenting to find out if we are in XR mode -- see https://threejs.org/docs/#api/en/renderers/webxr/WebXRManager 
+			// (and https://threejs.org/docs/#api/en/renderers/WebGLRenderer.xr, which states that renderer.xr points to the WebXRManager)
+			document.body.appendChild( VRButton.createButton( renderer ) );	// for VR content
+			addXRInteractivity();
+		  }
+		});
+	  }
 
 	createInfo();
 	refreshInfo();
@@ -1074,11 +1086,11 @@ function initMirrors() {
 	xMirrorsOP = [];	// optical powers
 	for(let i=0; i<10; i++) {
 		xMirrorsX.push(0.0);
-		xMirrorsYMin.push(yMin);
-		xMirrorsYMax.push(yMax);
+		xMirrorsYMin.push(yMin+resonatorY);
+		xMirrorsYMax.push(yMax+resonatorY);
 		xMirrorsZMin.push(zMin);
 		xMirrorsZMax.push(zMax);
-		xMirrorsP.push(new THREE.Vector3(0., 0., 0.));
+		xMirrorsP.push(new THREE.Vector3(0., resonatorY, 0.));
 		xMirrorsOP.push(-1.);
 	}
 	// set the actual values where those differ from the default ones
@@ -1101,12 +1113,12 @@ function initMirrors() {
 		yMirrorsXMax.push(xMax);
 		yMirrorsZMin.push(zMin);
 		yMirrorsZMax.push(zMax);
-		yMirrorsP.push(new THREE.Vector3(0., 0., 0.));
+		yMirrorsP.push(new THREE.Vector3(0., resonatorY, 0.));
 		yMirrorsOP.push(0.);
 	}
 	// set the actual values where those differ from the default ones
-	yMirrorsY[0] = yMin; yMirrorsP[0].y = yMin;
-	yMirrorsY[1] = yMax; yMirrorsP[1].y = yMax;
+	yMirrorsY[0] = yMin+resonatorY; yMirrorsP[0].y = yMin+resonatorY;
+	yMirrorsY[1] = yMax+resonatorY; yMirrorsP[1].y = yMax+resonatorY;
 
 	zMirrorsN = 2;
 	// initialise all the elements to default values
@@ -1121,9 +1133,9 @@ function initMirrors() {
 		zMirrorsZ.push(0.0);
 		zMirrorsXMin.push(xMin);
 		zMirrorsXMax.push(xMax);
-		zMirrorsYMin.push(yMin);
-		zMirrorsYMax.push(yMax);
-		zMirrorsP.push(new THREE.Vector3(0., 0., 0.));
+		zMirrorsYMin.push(yMin+resonatorY);
+		zMirrorsYMax.push(yMax+resonatorY);
+		zMirrorsP.push(new THREE.Vector3(0., resonatorY, 0.));
 		zMirrorsOP.push(0.1);
 	}
 	// set the actual values where those differ from the default ones
@@ -1136,35 +1148,35 @@ function addXRInteractivity() {
 
 	// the two hand controllers
 
-	// const geometry = new THREE.BufferGeometry();
-	// geometry.setFromPoints( [ new THREE.Vector3( 0, 0, 0 ), new THREE.Vector3( 0, 0, - 5 ) ] );
+	const geometry = new THREE.BufferGeometry();
+	geometry.setFromPoints( [ new THREE.Vector3( 0, 0, 0 ), new THREE.Vector3( 0, 0, - 5 ) ] );
 
-	// const controller1 = renderer.xr.getController( 0 );
-	// controller1.add( new THREE.Line( geometry ) );
-	// scene.add( controller1 );
+	const controller1 = renderer.xr.getController( 0 );
+	controller1.add( new THREE.Line( geometry ) );
+	scene.add( controller1 );
 
-	// const controller2 = renderer.xr.getController( 1 );
-	// controller2.add( new THREE.Line( geometry ) );
-	// scene.add( controller2 );
+	const controller2 = renderer.xr.getController( 1 );
+	controller2.add( new THREE.Line( geometry ) );
+	scene.add( controller2 );
 
 	//
 
-	// const controllerModelFactory = new XRControllerModelFactory();
+	const controllerModelFactory = new XRControllerModelFactory();
 
-	// const controllerGrip1 = renderer.xr.getControllerGrip( 0 );
-	// controllerGrip1.add( controllerModelFactory.createControllerModel( controllerGrip1 ) );
-	// scene.add( controllerGrip1 );
+	const controllerGrip1 = renderer.xr.getControllerGrip( 0 );
+	controllerGrip1.add( controllerModelFactory.createControllerModel( controllerGrip1 ) );
+	scene.add( controllerGrip1 );
 
-	// const controllerGrip2 = renderer.xr.getControllerGrip( 1 );
-	// controllerGrip2.add( controllerModelFactory.createControllerModel( controllerGrip2 ) );
-	// scene.add( controllerGrip2 );
+	const controllerGrip2 = renderer.xr.getControllerGrip( 1 );
+	controllerGrip2.add( controllerModelFactory.createControllerModel( controllerGrip2 ) );
+	scene.add( controllerGrip2 );
 
 	//
 
 	const group = new InteractiveGroup( renderer, camera );
-	// group.listenToPointerEvents( renderer, camera );
-	// group.listenToXRControllerEvents( controller1 );
-	// group.listenToXRControllerEvents( controller2 );
+	group.listenToPointerEvents( renderer, camera );
+	group.listenToXRControllerEvents( controller1 );
+	group.listenToXRControllerEvents( controller2 );
 	scene.add( group );
 
 	const mesh = new HTMLMesh( gui.domElement );
@@ -1173,7 +1185,7 @@ function addXRInteractivity() {
 	mesh.position.z = - 0.5;
 	mesh.rotation.y = Math.PI / 4;
 	mesh.scale.setScalar( 2 );
-	// group.add( mesh );	
+	group.add( mesh );	
 }
 
 function createVideoFeeds() {
