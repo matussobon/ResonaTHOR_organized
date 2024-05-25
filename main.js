@@ -1213,6 +1213,20 @@ function background2String() {
 	}
 }
 
+function getBackgroundInfo() {
+	switch (background) { 
+		case 0: return '<a href="https://www.flickr.com/photos/pano_philou/1041580126"><i>360-180 Glasgow University - Western Square</i></a> by pano_philou';	// https://www.flickr.com/photos/pano_philou/1041580126
+		case 1: return '<a href="https://www.flickr.com/photos/pano_philou/1141564032"><i>360-180 Glasgow University - Eastern Square</i></a> by pano_philou';	// 
+		case 2: return '<a href="https://www.flickr.com/photos/gawthrop/3485817556"><i>Mugdock Woods 6 Milngavie Scotland Equirectangular</i></a> by Peter Gawthrop';	// https://www.flickr.com/photos/gawthrop/3485817556
+		case 3: return '<a href="https://www.flickr.com/photos/gawthrop/49889830418"><i>Bluebells_13_Mugdock_Woods_Scotland-Equirectangular</i></a> by Peter Gawthrop';	// 
+		case 4: return '<a href="https://www.flickr.com/photos/pano_philou/1140758031"><i>360-180 The Glencoe Pass And The Three Sisters</i></a> by pano_philou';	// https://www.flickr.com/photos/pano_philou/1140758031
+		default: return 'Undefined';		
+			// 'Tower_University_Glasgow_Scotland-Equirectangular.jpg'	// https://www.flickr.com/photos/gawthrop/49890100126
+			// 'Saddle_05_Arran_Scotland-Equirectangular.jpg'	// https://www.flickr.com/photos/gawthrop/49889356918
+		}
+	
+}
+
 function resonatorType2String() {
 	switch(resonatorType) {
 		case 0: return 'Canonical resonator';
@@ -1331,7 +1345,7 @@ function addXRInteractivity() {
 	mesh = new HTMLMesh( gui.domElement );
 	mesh.position.x = 0;
 	mesh.position.y = resonatorY - 1;
-	mesh.position.z = 0.25;
+	mesh.position.z = -0.4;
 	mesh.rotation.z = 0; // Math.PI/2;
 	mesh.scale.setScalar( 2 );
 	group.add( mesh );	
@@ -1689,10 +1703,11 @@ function getInfoString() {
 		`&nbsp;&nbsp;Number of rays = ${noOfRays}\n` +
 		`<br><br>Stored photo description/name = ${storedPhotoDescription}\n` +
 		'<h4>Background image information</h4>\n' +
-		'<a href="https://www.flickr.com/photos/pano_philou/1041580126">"360-180 Glasgow University - Western Square"</a> by pano_philou<br>\n' +
+		getBackgroundInfo() + '<br>\n' +
+		// '<a href="https://www.flickr.com/photos/pano_philou/1041580126">"360-180 Glasgow University - Western Square"</a> by pano_philou<br>\n' +
 		'License: <a href="https://creativecommons.org/licenses/by-nc-sa/2.0/">CC BY-NC-SA 2.0 DEED</a><br>\n' +
 		// `<h4>${appName}</h4>\n` +
-		`${appName} (University of Glasgow, <a href="https://github.com/jkcuk/'+${appName}+'">https://github.com/jkcuk/'+${appName}+'</a>) is ${appDescription}.`
+		`<br><br>${appName} (University of Glasgow, <a href="https://github.com/jkcuk/${appName}">https://github.com/jkcuk/${appName}</a>) is ${appDescription}.`
 		;
 		console.log("*");
 }
