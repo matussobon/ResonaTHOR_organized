@@ -1094,9 +1094,9 @@ function createGUI() {
 	gui.add( GUIParams, 'resonatorY',  0, 3).name( "<i>y</i><sub>resonator</sub>" ).onChange( (y) => { resonatorY = y; } );
 	gui.add( GUIParams, 'makeEyeLevel' ).name( 'Move resonator to eye level' );
 
-	gui.add( GUIParams, 'meshRotationX', -Math.PI, Math.PI ).onChange( (a) => { meshRotationX = a; })
-	gui.add( GUIParams, 'meshRotationY', -Math.PI, Math.PI ).onChange( (a) => { meshRotationY = a; })
-	gui.add( GUIParams, 'meshRotationZ', -Math.PI, Math.PI ).onChange( (a) => { meshRotationZ = a; })
+	// gui.add( GUIParams, 'meshRotationX', -Math.PI, Math.PI ).onChange( (a) => { meshRotationX = a; })
+	// gui.add( GUIParams, 'meshRotationY', -Math.PI, Math.PI ).onChange( (a) => { meshRotationY = a; })
+	// gui.add( GUIParams, 'meshRotationZ', -Math.PI, Math.PI ).onChange( (a) => { meshRotationZ = a; })
 
 	// const folderVirtualCamera = gui.addFolder( 'Virtual camera' );
 	gui.add( GUIParams, 'Horiz. FOV (&deg;)', 1, 170, 1).onChange( setScreenFOV );
