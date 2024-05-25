@@ -226,9 +226,9 @@ function updateUniforms() {
 
 	mesh.position.y = deltaY - 1;
 
-	mesh.rotation.x = meshRotationX;
-	mesh.rotation.y = meshRotationY;
-	mesh.rotation.z = meshRotationZ;
+	// mesh.rotation.x = meshRotationX;
+	// mesh.rotation.y = meshRotationY;
+	// mesh.rotation.z = meshRotationZ;
 	
 	// raytracingSphereShaderMaterial.uniforms.xMirrorsN.value = xMirrorsN;
 	// raytracingSphereShaderMaterial.uniforms.xMirrorsX.value = xMirrorsX;	// {x[0], x[1], ...}; note that we require x[0] <= x[1] <= x[2] ...!
