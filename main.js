@@ -1248,7 +1248,7 @@ function addXRInteractivity() {
 	mesh = new HTMLMesh( gui.domElement );
 	mesh.position.x = 0;
 	mesh.position.y = resonatorY - 1;
-	mesh.position.z = 0;
+	mesh.position.z = 0.25;
 	mesh.rotation.z = 0; // Math.PI/2;
 	mesh.scale.setScalar( 2 );
 	group.add( mesh );	
