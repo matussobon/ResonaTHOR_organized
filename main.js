@@ -1238,8 +1238,8 @@ function addXRInteractivity() {
 	mesh.position.x = 0;
 	mesh.position.y = resonatorY - 1;
 	mesh.position.z = 0;
-	mesh.rotation.z = Math.PI/2;
-	mesh.scale.setScalar( 2 );
+	mesh.rotation.z = 0; // Math.PI/2;
+	mesh.scale.setScalar( 4 );
 	group.add( mesh );	
 }
 
