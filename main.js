@@ -25,16 +25,20 @@ import { InteractiveGroup } from 'three/addons/interactive/InteractiveGroup.js';
 import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js';
 // import { createMeshesFromInstancedMesh } from 'three/examples/jsm/utils/SceneUtils.js';
 
-let name = 'ResonaTHOR';
+let appName = 'ResonaTHOR';
+let appDescription = 'the premier tool for simulating the view inside optical resonators';
 
 let scene;
 let renderer;
-let textureGU;
+let backgroundTexture;
 let camera;
 let controls;
 let raytracingSphere;
 let raytracingSphereShaderMaterial;
 
+let background = 0;
+
+let resonatorType = 0;	// 0 = single canonical resonator in x direction, 1 = crossed canonical resonators in x and z directions, 2 = Penrose cavity
 let mirrorsNMax = 4;	// max number of mirrors in each array
 
 let xMirrorsN;
@@ -70,6 +74,10 @@ let yMin = -.5;
 let yMax = 0.5;
 let zMin = -.5;
 let zMax = 0.5;
+let xMirrorXMinOP = 0;
+let xMirrorXMaxOP = 0;
+let zMirrorZMinOP = 0;
+let zMirrorZMaxOP = 0;
 
 // lift the resonator up to eye level (in case of VR only)
 let resonatorY = 1.5;
@@ -94,7 +102,8 @@ let info;
 // the menu
 let gui;
 let GUIParams;
-let autofocusControl, focusDistanceControl;
+let autofocusControl, focusDistanceControl, resonatorTypeControl, opz0Control, opz1Control, z0Control, z1Control, backgroundControl;
+
 let mesh;
 let meshRotationX = -Math.PI/4, meshRotationY = 0, meshRotationZ = 0;
 
@@ -195,34 +204,81 @@ function updateUniforms() {
 	// 	deltaY = 0;
 	// }
 
-	// two crossed canonical resonators
-	xMirrorsN = 2;
-	yMirrorsN = 0;
-	zMirrorsN = 2;
+	switch(resonatorType) {
+		case 1:	// 1 = crossed canonical resonators in x and z directions
+			xMirrorsN = 2;
+			yMirrorsN = 0;
+			zMirrorsN = 2;
 
+			for(let i=0; i<xMirrorsN; i++) {
+				xMirrorsYMin[i] = yMin+deltaY;
+				xMirrorsYMax[i] = yMax+deltaY;
+				xMirrorsZMin[i] = zMin;
+				xMirrorsZMax[i] = zMax;
+				xMirrorsP[i].y = deltaY;
+			}
+			xMirrorsX[0] = xMin; xMirrorsP[0].x = xMin; xMirrorsOP[0] = xMirrorXMinOP;
+			xMirrorsX[1] = xMax; xMirrorsP[1].x = xMax; xMirrorsOP[1] = xMirrorXMaxOP;
+
+			for(let i=0; i<zMirrorsN; i++) {
+				zMirrorsYMin[i] = yMin+deltaY;
+				zMirrorsYMax[i] = yMax+deltaY;
+				zMirrorsXMin[i] = xMin;
+				zMirrorsXMax[i] = xMax;
+				zMirrorsP[i].y = deltaY;
+			}
+			zMirrorsZ[0] = zMin; zMirrorsP[0].z = zMin; zMirrorsOP[0] = zMirrorZMinOP;
+			zMirrorsZ[1] = zMax; zMirrorsP[1].z = zMax; zMirrorsOP[1] = zMirrorZMaxOP;
+			break;
+		case 2:	// 2 = Penrose cavity
+			xMirrorsN = 4;
+			yMirrorsN = 0;
+			zMirrorsN = 4;
+
+			for(let i=0; i<xMirrorsN; i++) {
+				xMirrorsYMin[i] = yMin+deltaY;
+				xMirrorsYMax[i] = yMax+deltaY;
+				xMirrorsZMin[i] = zMin;
+				xMirrorsZMax[i] = zMax;
+				xMirrorsP[i].y = deltaY;
+			}
+			xMirrorsX[0] = xMin; xMirrorsP[0].x = xMin;	xMirrorsOP[0] = xMirrorXMinOP; // end mirror 1
+			xMirrorsX[1] = -0.1;
+			xMirrorsX[2] = 0.1;
+			xMirrorsX[3] = xMax; xMirrorsP[3].x = xMax;	xMirrorsOP[3] = xMirrorXMaxOP;	// end mirror 2
+
+			for(let i=0; i<zMirrorsN; i++) {
+				zMirrorsYMin[i] = yMin+deltaY;
+				zMirrorsYMax[i] = yMax+deltaY;
+				zMirrorsXMin[i] = xMin;
+				zMirrorsXMax[i] = xMax;
+				zMirrorsP[i].y = deltaY;
+			}
+			zMirrorsZ[0] = zMin; zMirrorsP[0].z = zMin;	zMirrorsOP[0] = zMirrorZMinOP;	// end mirror 1
+			zMirrorsZ[1] = 0;
+			zMirrorsZ[2] = 0;
+			zMirrorsZ[3] = zMax; zMirrorsP[3].z = zMax; zMirrorsOP[3] = zMirrorZMaxOP;	// end mirror 1
+			break;
+		case 0:	// 0 = single canonical resonator in x direction
+		default:
+			xMirrorsN = 2;
+			yMirrorsN = 0;
+			zMirrorsN = 0;
+
+			for(let i=0; i<xMirrorsN; i++) {
+				xMirrorsYMin[i] = yMin+deltaY;
+				xMirrorsYMax[i] = yMax+deltaY;
+				xMirrorsZMin[i] = zMin;
+				xMirrorsZMax[i] = zMax;
+				xMirrorsP[i].y = deltaY;
+			}
+			xMirrorsX[0] = xMin; xMirrorsP[0].x = xMin; xMirrorsOP[0] = xMirrorXMinOP;
+			xMirrorsX[1] = xMax; xMirrorsP[1].x = xMax; xMirrorsOP[1] = xMirrorXMaxOP;
+	}
 	raytracingSphereShaderMaterial.uniforms.xMirrorsN.value = xMirrorsN;
 	raytracingSphereShaderMaterial.uniforms.yMirrorsN.value = yMirrorsN;
 	raytracingSphereShaderMaterial.uniforms.zMirrorsN.value = zMirrorsN;
 
-	for(let i=0; i<xMirrorsN; i++) {
-		xMirrorsYMin[i] = yMin+deltaY;
-		xMirrorsYMax[i] = yMax+deltaY;
-		xMirrorsZMin[i] = zMin;
-		xMirrorsZMax[i] = zMax;
-		xMirrorsP[i].y = deltaY;
-	}
-	xMirrorsX[0] = xMin; xMirrorsP[0].x = xMin;
-	xMirrorsX[1] = xMax; xMirrorsP[1].x = xMax;
-
-	for(let i=0; i<zMirrorsN; i++) {
-		zMirrorsYMin[i] = yMin+deltaY;
-		zMirrorsYMax[i] = yMax+deltaY;
-		zMirrorsXMin[i] = xMin;
-		zMirrorsXMax[i] = xMax;
-		zMirrorsP[i].y = deltaY;
-	}
-	zMirrorsZ[0] = zMin; zMirrorsP[0].z = zMin;
-	zMirrorsZ[1] = zMax; zMirrorsP[1].z = zMax;
 
 	mesh.position.y = deltaY - 1;
 
@@ -257,7 +313,7 @@ function updateUniforms() {
 	// raytracingSphereShaderMaterial.uniforms.zMirrorsP.value = zMirrorsP;	// {P[0], P[1], ...}
 	// raytracingSphereShaderMaterial.uniforms.zMirrorsOP.value = zMirrorsOP;	// {op[0], op[1], ...}
 
-	raytracingSphereShaderMaterial.uniforms.backgroundTexture.value = textureGU;
+	raytracingSphereShaderMaterial.uniforms.backgroundTexture.value = backgroundTexture;
 
 	// create the points on the aperture
 
@@ -382,7 +438,7 @@ function addRaytracingSphere() {
 			zMirrorsYMax: { value: zMirrorsYMax },	// {yMax[0], yMax[1], ...}
 			zMirrorsP: { value: zMirrorsP },
 			zMirrorsOP: { value: zMirrorsOP },
-			backgroundTexture: { value: textureGU },
+			backgroundTexture: { value: backgroundTexture },
 			focusDistance: { value: 10.0 },
 			apertureXHat: { value: new THREE.Vector3(1, 0, 0) },
 			apertureYHat: { value: new THREE.Vector3(0, 1, 0) },
@@ -1060,15 +1116,28 @@ function createGUI() {
 		// 'Autofocus': autofocus,
 			'Point forward (in -<b>z</b> direction)': pointForward,
 		'Show/hide info': toggleInfoVisibility,
+		background: function() {
+			background = (background + 1) % 5;
+			loadBackgroundImage();
+			backgroundControl.name( background2String() );	
+		},
+		resonatorType: function() {
+			resonatorType = (resonatorType + 1) % 3;
+			resonatorTypeControl.name( resonatorType2String() );
+			opz0Control.disable( resonatorType == 0 );
+			opz1Control.disable( resonatorType == 0 );
+			z0Control.disable( resonatorType == 0 );
+			z1Control.disable( resonatorType == 0 );
+		},
 		// optical powers
-		opx0: xMirrorsOP[0],
-		opx1: xMirrorsOP[1],
-		opz0: zMirrorsOP[0],
-		opz1: zMirrorsOP[1],
-		x0: xMin,
-		x1: xMax,
-		z0: zMin,
-		z1: zMax,
+		opxMin: xMirrorXMinOP,
+		opxMax: xMirrorXMaxOP,
+		opzMin: zMirrorZMinOP,
+		opzMax: zMirrorZMaxOP,
+		xMin: xMin,
+		xMax: xMax,
+		zMin: zMin,
+		zMax: zMax,
 		resonatorY: resonatorY,
 		makeEyeLevel: function() { resonatorY = camera.position.y; },
 		meshRotX: meshRotationX,
@@ -1077,19 +1146,20 @@ function createGUI() {
 	}
 
 	gui.add( GUIParams, 'maxTraceLevel', 1, 200, 1 ).name( "max. TL" ).onChange( (mtl) => {raytracingSphereShaderMaterial.uniforms.maxTraceLevel.value = mtl; } );
-	gui.add( GUIParams, 'opx0', -10, 10, 0.001 ).name( "OP<sub>x,0</sub>" ).onChange( (o) => { xMirrorsOP[0] = o; } );
-	gui.add( GUIParams, 'opx1', -10, 10, 0.001 ).name( "OP<sub>x,1</sub>" ).onChange( (o) => { xMirrorsOP[1] = o; } );
-	gui.add( GUIParams, 'opz0', -10, 10, 0.001 ).name( "OP<sub>z,0</sub>" ).onChange( (o) => { zMirrorsOP[0] = o; } );
-	gui.add( GUIParams, 'opz1', -10, 10, 0.001 ).name( "OP<sub>z,1</sub>" ).onChange( (o) => { zMirrorsOP[1] = o; } );
+	resonatorTypeControl = gui.add( GUIParams, 'resonatorType' ).name( resonatorType2String() );
+	gui.add( GUIParams, 'opxMin', -10, 10, 0.001 ).name( "OP<sub><i>x</i>,min</sub>" ).onChange( (o) => { xMirrorXMinOP = o; } );
+	gui.add( GUIParams, 'opxMax', -10, 10, 0.001 ).name( "OP<sub><i>x</i>,max</sub>" ).onChange( (o) => { xMirrorXMaxOP = o; } );
+	opz0Control = gui.add( GUIParams, 'opzMin', -10, 10, 0.001 ).name( "OP<sub><i>z</i>,min</sub>" ).onChange( (o) => { zMirrorZMinOP = o; } );
+	opz1Control = gui.add( GUIParams, 'opzMax', -10, 10, 0.001 ).name( "OP<sub><i>z</i>,max</sub>" ).onChange( (o) => { zMirrorZMaxOP = o; } );
 
 	// gui.add( GUIParams, 'x0', -10, -0.1, 0.001 ).name( "<i>x</i><sub>0</sub>" ).onChange( (x) => { xMirrorsX[0] = x; xMirrorsP[0].x = x; for(let i=0; i<mirrorsNMax; i++) zMirrorsXMin[i] = x; } );
 	// gui.add( GUIParams, 'x1',  0.1,  10, 0.001 ).name( "<i>x</i><sub>1</sub>" ).onChange( (x) => { xMirrorsX[1] = x; xMirrorsP[1].x = x; for(let i=0; i<mirrorsNMax; i++) zMirrorsXMax[i] = x; } );
 	// gui.add( GUIParams, 'z0', -10, -0.1, 0.001 ).name( "<i>z</i><sub>0</sub>" ).onChange( (z) => { zMirrorsZ[0] = z; zMirrorsP[0].z = z; for(let i=0; i<mirrorsNMax; i++) xMirrorsZMin[i] = z; } );
 	// gui.add( GUIParams, 'z1',  0.1,  10, 0.001 ).name( "<i>z</i><sub>1</sub>" ).onChange( (z) => { zMirrorsZ[1] = z; zMirrorsP[1].z = z; for(let i=0; i<mirrorsNMax; i++) xMirrorsZMax[i] = z; } );
-	gui.add( GUIParams, 'x0', -10, -0.1, 0.001 ).name( "<i>x</i><sub>0</sub>" ).onChange( (x) => { xMin = x; } );
-	gui.add( GUIParams, 'x1',  0.1,  10, 0.001 ).name( "<i>x</i><sub>1</sub>" ).onChange( (x) => { xMax = x; } );
-	gui.add( GUIParams, 'z0', -10, -0.1, 0.001 ).name( "<i>z</i><sub>0</sub>" ).onChange( (z) => { zMin = z; } );
-	gui.add( GUIParams, 'z1',  0.1,  10, 0.001 ).name( "<i>z</i><sub>1</sub>" ).onChange( (z) => { zMax = z; } );
+	gui.add( GUIParams, 'xMin', -10, -0.1, 0.001 ).name( "<i>x</i><sub>min</sub>" ).onChange( (x) => { xMin = x; } );
+	gui.add( GUIParams, 'xMax',  0.1,  10, 0.001 ).name( "<i>x</i><sub>max</sub>" ).onChange( (x) => { xMax = x; } );
+	z0Control = gui.add( GUIParams, 'zMin', -10, -0.1, 0.001 ).name( "<i>z</i><sub>min</sub>" ).onChange( (z) => { zMin = z; } );
+	z1Control = gui.add( GUIParams, 'zMax',  0.1,  10, 0.001 ).name( "<i>z</i><sub>max</sub>" ).onChange( (z) => { zMax = z; } );
 
 	gui.add( GUIParams, 'resonatorY',  0, 3).name( "<i>y</i><sub>resonator</sub>" ).onChange( (y) => { resonatorY = y; } );
 	gui.add( GUIParams, 'makeEyeLevel' ).name( 'Move resonator to eye level' );
@@ -1105,9 +1175,9 @@ function createGUI() {
 	// gui.add( GUIParams, 'Autofocus' ).onChange( (b) => { autofocus = b; focusDistanceControl.disable(autofocus); } );
 	focusDistanceControl = gui.add( GUIParams, 'tan<sup>-1</sup>(focus. dist.)', 
 		//Math.atan(0.1), 
-		-0.5*Math.PI,
+		0.01,	// -0.5*Math.PI,	// allow only positive focussing distances
 		0.5*Math.PI,
-		0.001
+		0.0001
 	).onChange( (a) => { atanFocusDistance = a; } );
 	focusDistanceControl.disable(autofocus);
 	// focusDistanceControl = gui.add( GUIParams, 'tan<sup>-1</sup>(focus. dist.)', 
@@ -1119,6 +1189,7 @@ function createGUI() {
 	// folderVirtualCamera.add( atanFocusDistance, 'atan focus dist', -0.5*Math.PI, +0.5*Math.PI ).listen();
 	gui.add( GUIParams, 'No of rays', 1, 100, 1).onChange( (n) => { noOfRays = n; } );
 	gui.add( GUIParams, 'Point forward (in -<b>z</b> direction)' );
+	backgroundControl = gui.add( GUIParams, 'background' ).name( background2String() );
 	// folderVirtualCamera.close();
 
 	// const folderSettings = gui.addFolder( 'Other controls' );
@@ -1131,11 +1202,23 @@ function createGUI() {
 
 function background2String() {
 	switch (background) { 
-	case 0: return 'Camera video';
-	case 1: return 'Dr TIM';
-	case 2: return 'Buzz Aldrin';
-	case 3: return 'Descent from Half Dome';
-	default: return 'Undefined';
+	case 0: return 'Glasgow University, West Quadrangle';	// '360-180 Glasgow University - Western Square.jpg'	// https://www.flickr.com/photos/pano_philou/1041580126
+	case 1: return 'Glasgow University, East Quadrangle';	// '360-180 Glasgow University - Eastern Square.jpg'	// https://www.flickr.com/photos/pano_philou/1141564032
+	case 2: return 'Mugdock';	// 'Mugdock Woods 6 Milngavie Scotland Equirectangular.jpg'	// https://www.flickr.com/photos/gawthrop/3485817556
+	case 3: return 'Mugdock bluebells';	// 'Bluebells_13_Mugdock_Woods_Scotland-Equirectangular.jpg'	// https://www.flickr.com/photos/gawthrop/49889830418
+	case 4: return 'Glencoe';	// '360-180 The Glencoe Pass And The Three Sisters.jpg'	// https://www.flickr.com/photos/pano_philou/1140758031
+	default: return 'Undefined';		
+		// 'Tower_University_Glasgow_Scotland-Equirectangular.jpg'	// https://www.flickr.com/photos/gawthrop/49890100126
+		// 'Saddle_05_Arran_Scotland-Equirectangular.jpg'	// https://www.flickr.com/photos/gawthrop/49889356918
+	}
+}
+
+function resonatorType2String() {
+	switch(resonatorType) {
+		case 0: return 'Canonical resonator';
+		case 1: return 'Crossed canonical resonators';
+		case 2: return 'Penrose cavity';
+		default: return 'Undefined';
 	}
 }
 
@@ -1321,7 +1404,28 @@ function loadBackgroundImage() {
 	const textureLoader = new THREE.TextureLoader();
 	// textureLoader.crossOrigin = "Anonymous";
 
-	textureGU = textureLoader.load('GlasgowUniversity.jpg');
+	let filename;
+	switch (background) { 
+		case 1: 
+			filename = '360-180 Glasgow University - Eastern Square.jpg';	// https://www.flickr.com/photos/pano_philou/1141564032
+			break;
+		case 2: 
+			filename = 'Mugdock Woods 6 Milngavie Scotland Equirectangular.jpg';	// https://www.flickr.com/photos/gawthrop/3485817556
+			break;
+		case 3: 
+			filename = 'Bluebells_13_Mugdock_Woods_Scotland-Equirectangular.jpg';	// https://www.flickr.com/photos/gawthrop/49889830418
+			break;
+		case 4: 
+			filename = '360-180 The Glencoe Pass And The Three Sisters.jpg';	// https://www.flickr.com/photos/pano_philou/1140758031
+			break;
+		case 0: 
+		default:
+			filename = '360-180 Glasgow University - Western Square.jpg';	// https://www.flickr.com/photos/pano_philou/1041580126
+			// 'Tower_University_Glasgow_Scotland-Equirectangular.jpg'	// https://www.flickr.com/photos/gawthrop/49890100126
+			// 'Saddle_05_Arran_Scotland-Equirectangular.jpg'	// https://www.flickr.com/photos/gawthrop/49889356918
+		}
+
+	backgroundTexture = textureLoader.load(filename);
 }
 
 function addEventListenersEtc() {
@@ -1520,7 +1624,7 @@ function takePhoto() {
 		storedPhoto = renderer.domElement.toDataURL('image/png');
 		storedPhotoInfoString = getInfoString();
 
-		storedPhotoDescription = `${name}`;
+		storedPhotoDescription = `${appName}`;
 		// 
 		document.getElementById('storedPhoto').src=storedPhoto;
 		document.getElementById('storedPhotoThumbnail').src=storedPhoto;
@@ -1573,7 +1677,7 @@ function postStatus(text) {
 
 	// show the text only for 3 seconds
 	statusTime = new Date().getTime();
-	setTimeout( () => { if(new Date().getTime() - statusTime > 2999) status.innerHTML = '&nbsp;'+name+', University of Glasgow, <a href="https://github.com/jkcuk/'+name+'">https://github.com/jkcuk/'+name+'</a>' }, 3000);
+	setTimeout( () => { if(new Date().getTime() - statusTime > 2999) status.innerHTML = '&nbsp;'+appName+', University of Glasgow, <a href="https://github.com/jkcuk/'+appName+'">https://github.com/jkcuk/'+appName+'</a>' }, 3000);
 }
 
 function getInfoString() {
@@ -1583,7 +1687,12 @@ function getInfoString() {
 		`&nbsp;&nbsp;Aperture radius = ${apertureRadius.toPrecision(4)}<br>\n` +
 		`&nbsp;&nbsp;Focussing distance = ${Math.tan(atanFocusDistance).toPrecision(4)}<br>\n` +
 		`&nbsp;&nbsp;Number of rays = ${noOfRays}\n` +
-		`<br><br>Stored photo description/name = ${storedPhotoDescription}`
+		`<br><br>Stored photo description/name = ${storedPhotoDescription}\n` +
+		'<h4>Background image information</h4>\n' +
+		'<a href="https://www.flickr.com/photos/pano_philou/1041580126">"360-180 Glasgow University - Western Square"</a> by pano_philou<br>\n' +
+		'License: <a href="https://creativecommons.org/licenses/by-nc-sa/2.0/">CC BY-NC-SA 2.0 DEED</a><br>\n' +
+		// `<h4>${appName}</h4>\n` +
+		`${appName} (University of Glasgow, <a href="https://github.com/jkcuk/'+${appName}+'">https://github.com/jkcuk/'+${appName}+'</a>) is ${appDescription}.`
 		;
 		console.log("*");
 }
