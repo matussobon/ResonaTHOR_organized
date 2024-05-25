@@ -94,6 +94,7 @@ let info;
 let gui;
 let GUIParams;
 let autofocusControl, focusDistanceControl;
+let mesh;
 
 
 // true if stored photo is showing
@@ -142,7 +143,8 @@ function init() {
 	// the controls menu
 	// refreshGUI();
 	createGUI();
-
+	mesh = new HTMLMesh( gui.domElement );
+	
 	// check if VR is supported (see https://developer.mozilla.org/en-US/docs/Web/API/XRSystem/isSessionSupported)...
 	if (navigator.xr) {
 		navigator.xr.isSessionSupported("immersive-vr").then((isSupported) => {
@@ -220,6 +222,9 @@ function updateUniforms() {
 	}
 	zMirrorsZ[0] = zMin; zMirrorsP[0].z = zMin;
 	zMirrorsZ[1] = zMax; zMirrorsP[1].z = zMax;
+
+	mesh.position.y = deltaY - 1;
+
 	
 	// raytracingSphereShaderMaterial.uniforms.xMirrorsN.value = xMirrorsN;
 	// raytracingSphereShaderMaterial.uniforms.xMirrorsX.value = xMirrorsX;	// {x[0], x[1], ...}; note that we require x[0] <= x[1] <= x[2] ...!
@@ -1229,11 +1234,11 @@ function addXRInteractivity() {
 	scene.add( group );
 
 	// place this below the resonator
-	const mesh = new HTMLMesh( gui.domElement );
+	mesh = new HTMLMesh( gui.domElement );
 	mesh.position.x = 0;
 	mesh.position.y = resonatorY - 1;
 	mesh.position.z = 0;
-	mesh.rotation.y = 0;
+	mesh.rotation.y = Math.PI/2;
 	mesh.scale.setScalar( 2 );
 	group.add( mesh );	
 }
