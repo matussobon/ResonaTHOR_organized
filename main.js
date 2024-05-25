@@ -96,7 +96,7 @@ let gui;
 let GUIParams;
 let autofocusControl, focusDistanceControl;
 let mesh;
-let meshRotationX = 0, meshRotationY = 0, meshRotationZ = 0;
+let meshRotationX = -Math.PI/4, meshRotationY = 0, meshRotationZ = 0;
 
 // true if stored photo is showing
 let showingStoredPhoto = false;
@@ -1094,8 +1094,8 @@ function createGUI() {
 	gui.add( GUIParams, 'resonatorY',  0, 3).name( "<i>y</i><sub>resonator</sub>" ).onChange( (y) => { resonatorY = y; } );
 	gui.add( GUIParams, 'makeEyeLevel' ).name( 'Move resonator to eye level' );
 
-	gui.add( GUIParams, 'meshRotX', -Math.PI, Math.PI ).name('Rot x').onChange( (a) => { meshRotationX = a; })
-	gui.add( GUIParams, 'meshRotY', -Math.PI, Math.PI ).name('Rot y').onChange( (a) => { meshRotationY = a; })
+	// gui.add( GUIParams, 'meshRotX', -Math.PI, Math.PI ).name('Rot x').onChange( (a) => { meshRotationX = a; })
+	// gui.add( GUIParams, 'meshRotY', -Math.PI, Math.PI ).name('Rot y').onChange( (a) => { meshRotationY = a; })
 	// gui.add( GUIParams, 'meshRotZ', -Math.PI, Math.PI ).name('Rot z').onChange( (a) => { meshRotationZ = a; })
 
 	// const folderVirtualCamera = gui.addFolder( 'Virtual camera' );
