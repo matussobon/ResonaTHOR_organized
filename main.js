@@ -226,8 +226,8 @@ function updateUniforms() {
 
 	mesh.position.y = deltaY - 1;
 
-	mesh.rotation.x = meshRotationX;
-	mesh.rotation.y = meshRotationY;
+	mesh.rotation.y = Math.atan2(camera.position.z, camera.position.x);
+	mesh.rotation.x = -Math.PI/4;
 	// mesh.rotation.z = meshRotationZ;
 	
 	// raytracingSphereShaderMaterial.uniforms.xMirrorsN.value = xMirrorsN;
