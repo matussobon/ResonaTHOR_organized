@@ -144,7 +144,7 @@ function init() {
 	// refreshGUI();
 	createGUI();
 	mesh = new HTMLMesh( gui.domElement );
-	
+
 	// check if VR is supported (see https://developer.mozilla.org/en-US/docs/Web/API/XRSystem/isSessionSupported)...
 	if (navigator.xr) {
 		navigator.xr.isSessionSupported("immersive-vr").then((isSupported) => {
@@ -1238,7 +1238,7 @@ function addXRInteractivity() {
 	mesh.position.x = 0;
 	mesh.position.y = resonatorY - 1;
 	mesh.position.z = 0;
-	mesh.rotation.y = Math.PI/2;
+	mesh.rotation.z = Math.PI/4;
 	mesh.scale.setScalar( 2 );
 	group.add( mesh );	
 }
