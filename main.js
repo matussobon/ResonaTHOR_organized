@@ -24,7 +24,7 @@ import { HTMLMesh } from 'three/addons/interactive/HTMLMesh.js';
 import { InteractiveGroup } from 'three/addons/interactive/InteractiveGroup.js';
 import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js';
 
-let name = 'Resona-THOR';
+let name = 'ResonaTHOR';
 
 let scene;
 let renderer;
