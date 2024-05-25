@@ -23,6 +23,7 @@ import { VRButton } from 'three/addons/webxr/VRButton.js';
 import { HTMLMesh } from 'three/addons/interactive/HTMLMesh.js';
 import { InteractiveGroup } from 'three/addons/interactive/InteractiveGroup.js';
 import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js';
+import { createMeshesFromInstancedMesh } from 'three/examples/jsm/utils/SceneUtils.js';
 
 let name = 'ResonaTHOR';
 
@@ -95,7 +96,7 @@ let gui;
 let GUIParams;
 let autofocusControl, focusDistanceControl;
 let mesh;
-
+let meshRotationX = 0, meshRotationY = 0, meshRotationZ = 0;
 
 // true if stored photo is showing
 let showingStoredPhoto = false;
@@ -225,6 +226,9 @@ function updateUniforms() {
 
 	mesh.position.y = deltaY - 1;
 
+	mesh.rotation.x = meshRotationX;
+	mesh.rotation.y = meshRotationY;
+	mesh.rotation.z = meshRotationZ;
 	
 	// raytracingSphereShaderMaterial.uniforms.xMirrorsN.value = xMirrorsN;
 	// raytracingSphereShaderMaterial.uniforms.xMirrorsX.value = xMirrorsX;	// {x[0], x[1], ...}; note that we require x[0] <= x[1] <= x[2] ...!
@@ -1066,7 +1070,10 @@ function createGUI() {
 		z0: zMin,
 		z1: zMax,
 		resonatorY: resonatorY,
-		makeEyeLevel: function() { resonatorY = camera.position.y; }
+		makeEyeLevel: function() { resonatorY = camera.position.y; },
+		meshRotationX: meshRotationX,
+		meshRotationY: meshRotationY,
+		meshRotationZ: meshRotationZ
 	}
 
 	gui.add( GUIParams, 'maxTraceLevel', 1, 200, 1 ).name( "max. TL" ).onChange( (mtl) => {raytracingSphereShaderMaterial.uniforms.maxTraceLevel.value = mtl; } );
@@ -1086,6 +1093,10 @@ function createGUI() {
 
 	gui.add( GUIParams, 'resonatorY',  0, 3).name( "<i>y</i><sub>resonator</sub>" ).onChange( (y) => { resonatorY = y; } );
 	gui.add( GUIParams, 'makeEyeLevel' ).name( 'Move resonator to eye level' );
+
+	gui.add( GUIParams, 'meshRotationX', -Math.PI, Math.PI ).onChange( (a) => { meshRotationX = a; })
+	gui.add( GUIParams, 'meshRotationY', -Math.PI, Math.PI ).onChange( (a) => { meshRotationY = a; })
+	gui.add( GUIParams, 'meshRotationZ', -Math.PI, Math.PI ).onChange( (a) => { meshRotationZ = a; })
 
 	// const folderVirtualCamera = gui.addFolder( 'Virtual camera' );
 	gui.add( GUIParams, 'Horiz. FOV (&deg;)', 1, 170, 1).onChange( setScreenFOV );
@@ -1239,7 +1250,7 @@ function addXRInteractivity() {
 	mesh.position.y = resonatorY - 1;
 	mesh.position.z = 0;
 	mesh.rotation.z = 0; // Math.PI/2;
-	mesh.scale.setScalar( 4 );
+	mesh.scale.setScalar( 2 );
 	group.add( mesh );	
 }
 
