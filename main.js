@@ -23,7 +23,7 @@ import { VRButton } from 'three/addons/webxr/VRButton.js';
 import { HTMLMesh } from 'three/addons/interactive/HTMLMesh.js';
 import { InteractiveGroup } from 'three/addons/interactive/InteractiveGroup.js';
 import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js';
-import { createMeshesFromInstancedMesh } from 'three/examples/jsm/utils/SceneUtils.js';
+// import { createMeshesFromInstancedMesh } from 'three/examples/jsm/utils/SceneUtils.js';
 
 let name = 'ResonaTHOR';
 
