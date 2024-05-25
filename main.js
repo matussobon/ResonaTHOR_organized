@@ -227,7 +227,7 @@ function updateUniforms() {
 	mesh.position.y = deltaY - 1;
 
 	mesh.rotation.x = meshRotationX;
-	// mesh.rotation.y = meshRotationY;
+	mesh.rotation.y = meshRotationY;
 	// mesh.rotation.z = meshRotationZ;
 	
 	// raytracingSphereShaderMaterial.uniforms.xMirrorsN.value = xMirrorsN;
@@ -1095,7 +1095,7 @@ function createGUI() {
 	gui.add( GUIParams, 'makeEyeLevel' ).name( 'Move resonator to eye level' );
 
 	gui.add( GUIParams, 'meshRotationX', -Math.PI, Math.PI ).onChange( (a) => { meshRotationX = a; })
-	// gui.add( GUIParams, 'meshRotationY', -Math.PI, Math.PI ).onChange( (a) => { meshRotationY = a; })
+	gui.add( GUIParams, 'meshRotationY', -Math.PI, Math.PI ).onChange( (a) => { meshRotationY = a; })
 	// gui.add( GUIParams, 'meshRotationZ', -Math.PI, Math.PI ).onChange( (a) => { meshRotationZ = a; })
 
 	// const folderVirtualCamera = gui.addFolder( 'Virtual camera' );
