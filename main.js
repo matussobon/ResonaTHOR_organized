@@ -226,7 +226,7 @@ function updateUniforms() {
 
 	mesh.position.y = deltaY - 1;
 
-	// mesh.rotation.x = meshRotationX;
+	mesh.rotation.x = meshRotationX;
 	// mesh.rotation.y = meshRotationY;
 	// mesh.rotation.z = meshRotationZ;
 	
@@ -1094,7 +1094,7 @@ function createGUI() {
 	gui.add( GUIParams, 'resonatorY',  0, 3).name( "<i>y</i><sub>resonator</sub>" ).onChange( (y) => { resonatorY = y; } );
 	gui.add( GUIParams, 'makeEyeLevel' ).name( 'Move resonator to eye level' );
 
-	// gui.add( GUIParams, 'meshRotationX', -Math.PI, Math.PI ).onChange( (a) => { meshRotationX = a; })
+	gui.add( GUIParams, 'meshRotationX', -Math.PI, Math.PI ).onChange( (a) => { meshRotationX = a; })
 	// gui.add( GUIParams, 'meshRotationY', -Math.PI, Math.PI ).onChange( (a) => { meshRotationY = a; })
 	// gui.add( GUIParams, 'meshRotationZ', -Math.PI, Math.PI ).onChange( (a) => { meshRotationZ = a; })
 
