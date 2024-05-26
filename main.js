@@ -102,10 +102,11 @@ let info;
 // the menu
 let gui;
 let GUIParams;
-let autofocusControl, focusDistanceControl, resonatorTypeControl, opz0Control, opz1Control, z0Control, z1Control, backgroundControl;
+let autofocusControl, focusDistanceControl, resonatorTypeControl, opz0Control, opz1Control, z0Control, z1Control, backgroundControl, controlsVisibleControl;
 
-let mesh;
-let meshRotationX = -Math.PI/4, meshRotationY = 0, meshRotationZ = 0;
+let GUIMesh;
+let showGUIMesh;
+// let meshRotationX = -Math.PI/4, meshRotationY = 0, meshRotationZ = 0;
 
 // true if stored photo is showing
 let showingStoredPhoto = false;
@@ -153,7 +154,6 @@ function init() {
 	// the controls menu
 	// refreshGUI();
 	createGUI();
-	mesh = new HTMLMesh( gui.domElement );
 
 	// check if VR is supported (see https://developer.mozilla.org/en-US/docs/Web/API/XRSystem/isSessionSupported)...
 	if (navigator.xr) {
@@ -203,6 +203,8 @@ function updateUniforms() {
 	// } else {
 	// 	deltaY = 0;
 	// }
+
+	GUIMesh.position.y = deltaY - 1;
 
 	switch(resonatorType) {
 		case 1:	// 1 = crossed canonical resonators in x and z directions
@@ -279,10 +281,6 @@ function updateUniforms() {
 	raytracingSphereShaderMaterial.uniforms.yMirrorsN.value = yMirrorsN;
 	raytracingSphereShaderMaterial.uniforms.zMirrorsN.value = zMirrorsN;
 
-
-	mesh.position.y = deltaY - 1;
-
-	mesh.rotation.x = -Math.PI/4;
 	// mesh.rotation.y = -Math.atan2(camera.position.z, camera.position.x);
 	// mesh.rotation.z = meshRotationZ;
 	
@@ -1101,6 +1099,7 @@ function createGUI() {
 	// const 
 	gui = new GUI();
 	// gui.hide();
+	GUIMesh = new HTMLMesh( gui.domElement );
 
 	GUIParams = {
 		maxTraceLevel: raytracingSphereShaderMaterial.uniforms.maxTraceLevel.value,
@@ -1116,6 +1115,10 @@ function createGUI() {
 		// 'Autofocus': autofocus,
 			'Point forward (in -<b>z</b> direction)': pointForward,
 		'Show/hide info': toggleInfoVisibility,
+		controlsVisible: function() {
+			GUIMesh.visible = !GUIMesh.visible;
+			controlsVisibleControl.name( 'Controls '+(GUIMesh.visible?'visible':'hidden') );
+		},
 		background: function() {
 			background = (background + 1) % 5;
 			loadBackgroundImage();
@@ -1124,10 +1127,11 @@ function createGUI() {
 		resonatorType: function() {
 			resonatorType = (resonatorType + 1) % 3;
 			resonatorTypeControl.name( resonatorType2String() );
-			opz0Control.disable( resonatorType == 0 );
-			opz1Control.disable( resonatorType == 0 );
-			z0Control.disable( resonatorType == 0 );
-			z1Control.disable( resonatorType == 0 );
+			enableDisableResonatorControls();
+			// opz0Control.disable( resonatorType == 0 );
+			// opz1Control.disable( resonatorType == 0 );
+			// z0Control.disable( resonatorType == 0 );
+			// z1Control.disable( resonatorType == 0 );
 		},
 		// optical powers
 		opxMin: xMirrorXMinOP,
@@ -1139,10 +1143,10 @@ function createGUI() {
 		zMin: zMin,
 		zMax: zMax,
 		resonatorY: resonatorY,
-		makeEyeLevel: function() { resonatorY = camera.position.y; },
-		meshRotX: meshRotationX,
-		meshRotY: meshRotationY,
-		meshRotZ: meshRotationZ
+		makeEyeLevel: function() { resonatorY = camera.position.y; }
+		// meshRotX: meshRotationX,
+		// meshRotY: meshRotationY,
+		// meshRotZ: meshRotationZ
 	}
 
 	gui.add( GUIParams, 'maxTraceLevel', 1, 200, 1 ).name( "max. TL" ).onChange( (mtl) => {raytracingSphereShaderMaterial.uniforms.maxTraceLevel.value = mtl; } );
@@ -1190,6 +1194,9 @@ function createGUI() {
 	gui.add( GUIParams, 'No of rays', 1, 100, 1).onChange( (n) => { noOfRays = n; } );
 	gui.add( GUIParams, 'Point forward (in -<b>z</b> direction)' );
 	backgroundControl = gui.add( GUIParams, 'background' ).name( background2String() );
+	if(renderer.xr.enabled) {
+		controlsVisibleControl = gui.add( GUIParams, 'controlsVisible' ).name( 'Controls '+(GUIMesh.visible?'visible':'hidden') );
+	}
 	// folderVirtualCamera.close();
 
 	// const folderSettings = gui.addFolder( 'Other controls' );
@@ -1198,6 +1205,15 @@ function createGUI() {
 	// // folderSettings.add( params, 'Ideal lenses').onChange( (b) => { raytracingSphereShaderMaterial.uniforms.idealLenses.value = b; } );
 	// folderSettings.add( params, 'Show/hide info');
 	// folderSettings.close();
+
+	enableDisableResonatorControls();
+}
+
+function enableDisableResonatorControls() {
+	opz0Control.disable( resonatorType == 0 );
+	opz1Control.disable( resonatorType == 0 );
+	z0Control.disable( resonatorType == 0 );
+	z1Control.disable( resonatorType == 0 );
 }
 
 function background2String() {
@@ -1342,13 +1358,13 @@ function addXRInteractivity() {
 	scene.add( group );
 
 	// place this below the resonator
-	mesh = new HTMLMesh( gui.domElement );
-	mesh.position.x = 0;
-	mesh.position.y = resonatorY - 1;
-	mesh.position.z = -0.4;
-	mesh.rotation.z = 0; // Math.PI/2;
-	mesh.scale.setScalar( 2 );
-	group.add( mesh );	
+	GUIMesh = new HTMLMesh( gui.domElement );
+	GUIMesh.position.x = 0;
+	GUIMesh.position.y = resonatorY - 1;
+	GUIMesh.position.z = -0.4;
+	GUIMesh.rotation.x = -Math.PI/4;
+	GUIMesh.scale.setScalar( 2 );
+	group.add( GUIMesh );	
 }
 
 function createVideoFeeds() {
