@@ -1206,6 +1206,7 @@ function createGUI() {
 	// folderSettings.add( params, 'Show/hide info');
 	// folderSettings.close();
 
+	GUIMesh = new HTMLMesh( gui.domElement );
 	enableDisableResonatorControls();
 }
 
