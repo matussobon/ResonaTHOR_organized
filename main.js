@@ -39,45 +39,45 @@ let raytracingSphereShaderMaterial;
 let background = 0;
 
 let resonatorType = 0;	// 0 = single canonical resonator in x direction, 1 = crossed canonical resonators in x and z directions, 2 = Penrose cavity
-let mirrorsNMax = 4;	// max number of mirrors in each array
+let mirrorsN2 = 4;	// max number of mirrors in each array
 
 let xMirrorsN;
 let xMirrorsX;	// {x[0], x[1], ...}; note that we require x[0] <= x[1] <= x[2] ...!
-let xMirrorsYMin;	// {yMin[0], yMin[1], ...}
-let xMirrorsYMax;	// {yMax[0], yMax[1], ...}
-let xMirrorsZMin;	// {zMin[0], zMin[1], ...}
-let xMirrorsZMax;	// {zMax[0], zMax[1], ...}
+let xMirrorsY1;	// {y1[0], y1[1], ...}
+let xMirrorsY2;	// {y2[0], y2[1], ...}
+let xMirrorsZ1;	// {z1[0], z1[1], ...}
+let xMirrorsZ2;	// {z2[0], z2[1], ...}
 let xMirrorsP;	// {P[0], P[1], ...} Principal points
 let xMirrorsOP;	// {op[0], op[1], ...} optical powers
 
 let yMirrorsN;
 let yMirrorsY;	// {y[0], y[1], ...}; note that we require y[0] <= y[1] <= y[2] ...!
-let yMirrorsXMin;	// {xMin[0], xMin[1], ...}
-let yMirrorsXMax;	// {xMax[0], xMax[1], ...}
-let yMirrorsZMin;	// {zMin[0], zMin[1], ...}
-let yMirrorsZMax;	// {zMax[0], zMax[1], ...}
+let yMirrorsX1;	// {x1[0], x1[1], ...}
+let yMirrorsX2;	// {x2[0], x2[1], ...}
+let yMirrorsZ1;	// {z1[0], z1[1], ...}
+let yMirrorsZ2;	// {z2[0], z2[1], ...}
 let yMirrorsP;	// {P[0], P[1], ...} Principal points
 let yMirrorsOP;	// {op[0], op[1], ...} optical powers
 
 let zMirrorsN;
 let zMirrorsZ;	// {z[0], z[1], ...}; note that we require z[0] <= z[1] <= z[2] ...!
-let zMirrorsXMin;	// {xMin[0], xMin[1], ...}
-let zMirrorsXMax;	// {xMax[0], xMax[1], ...}
-let zMirrorsYMin;	// {yMin[0], yMin[1], ...}
-let zMirrorsYMax;	// {yMax[0], yMax[1], ...}
+let zMirrorsX1;	// {x1[0], x1[1], ...}
+let zMirrorsX2;	// {x2[0], x2[1], ...}
+let zMirrorsY1;	// {y1[0], y1[1], ...}
+let zMirrorsY2;	// {y2[0], y2[1], ...}
 let zMirrorsP;	// {P[0], P[1], ...} Principal points
 let zMirrorsOP;	// {op[0], op[1], ...} optical powers
 
-let xMin = -.5;
-let xMax = 0.5;
-let yMin = -.5;
-let yMax = 0.5;
-let zMin = -.5;
-let zMax = 0.5;
-let xMirrorXMinOP = 0;
-let xMirrorXMaxOP = 0;
-let zMirrorZMinOP = 0;
-let zMirrorZMaxOP = 0;
+let x1 = -.5;
+let x2 = 0.5;
+let y1 = -.5;
+let y2 = 0.5;
+let z1 = -.5;
+let z2 = 0.5;
+let xMirrorX1OP = 0;
+let xMirrorX2OP = 0;
+let zMirrorZ1OP = 0;
+let zMirrorZ2OP = 0;
 
 // lift the resonator up to eye level (in case of VR only)
 let resonatorY = 1.5;
@@ -102,7 +102,7 @@ let info;
 // the menu
 let gui;
 let GUIParams;
-let autofocusControl, focusDistanceControl, resonatorTypeControl, opz0Control, opz1Control, z0Control, z1Control, backgroundControl, controlsVisibleControl;
+let autofocusControl, focusDistanceControl, resonatorTypeControl, opz0Control, opz1Control, z0Control, z1Control, resonatorYControl, backgroundControl, controlsVisibleControl;
 
 let GUIMesh;
 let showGUIMesh;
@@ -156,18 +156,20 @@ function init() {
 	createGUI();
 
 	// check if VR is supported (see https://developer.mozilla.org/en-US/docs/Web/API/XRSystem/isSessionSupported)...
-	if (navigator.xr) {
-		navigator.xr.isSessionSupported("immersive-vr").then((isSupported) => {
-		  if (isSupported) {
-			// ... and enable the relevant features
-			renderer.xr.enabled = true;
-			// use renderer.xr.isPresenting to find out if we are in XR mode -- see https://threejs.org/docs/#api/en/renderers/webxr/WebXRManager 
-			// (and https://threejs.org/docs/#api/en/renderers/WebGLRenderer.xr, which states that renderer.xr points to the WebXRManager)
-			document.body.appendChild( VRButton.createButton( renderer ) );	// for VR content
-			addXRInteractivity();
-		  }
+	// if (navigator.xr) {
+	if ( 'xr' in navigator ) {
+		// navigator.xr.isSessionSupported("immersive-vr").then((isSupported) => {
+		navigator.xr.isSessionSupported( 'immersive-vr' ).then( function ( supported ) {
+			if (supported) {
+				// ... and enable the relevant features
+				renderer.xr.enabled = true;
+				// use renderer.xr.isPresenting to find out if we are in XR mode -- see https://threejs.org/docs/#api/en/renderers/webxr/WebXRManager 
+				// (and https://threejs.org/docs/#api/en/renderers/WebGLRenderer.xr, which states that renderer.xr points to the WebXRManager)
+				document.body.appendChild( VRButton.createButton( renderer ) );	// for VR content
+				addXRInteractivity();
+			}
 		});
-	  }
+	}
 
 	createInfo();
 	refreshInfo();
@@ -211,53 +213,57 @@ function updateUniforms() {
 			zMirrorsN = 2;
 
 			for(let i=0; i<xMirrorsN; i++) {
-				xMirrorsYMin[i] = yMin+deltaY;
-				xMirrorsYMax[i] = yMax+deltaY;
-				xMirrorsZMin[i] = zMin;
-				xMirrorsZMax[i] = zMax;
+				xMirrorsY1[i] = y1+deltaY;
+				xMirrorsY2[i] = y2+deltaY;
+				xMirrorsZ1[i] = z1;
+				xMirrorsZ2[i] = z2;
 				xMirrorsP[i].y = deltaY;
 			}
-			xMirrorsX[0] = xMin; xMirrorsP[0].x = xMin; xMirrorsOP[0] = xMirrorXMinOP;
-			xMirrorsX[1] = xMax; xMirrorsP[1].x = xMax; xMirrorsOP[1] = xMirrorXMaxOP;
+			xMirrorsX[0] = x1; xMirrorsP[0].x = x1; xMirrorsOP[0] = xMirrorX1OP;
+			xMirrorsX[1] = x2; xMirrorsP[1].x = x2; xMirrorsOP[1] = xMirrorX2OP;
 
 			for(let i=0; i<zMirrorsN; i++) {
-				zMirrorsYMin[i] = yMin+deltaY;
-				zMirrorsYMax[i] = yMax+deltaY;
-				zMirrorsXMin[i] = xMin;
-				zMirrorsXMax[i] = xMax;
+				zMirrorsY1[i] = y1+deltaY;
+				zMirrorsY2[i] = y2+deltaY;
+				zMirrorsX1[i] = x1;
+				zMirrorsX2[i] = x2;
 				zMirrorsP[i].y = deltaY;
 			}
-			zMirrorsZ[0] = zMin; zMirrorsP[0].z = zMin; zMirrorsOP[0] = zMirrorZMinOP;
-			zMirrorsZ[1] = zMax; zMirrorsP[1].z = zMax; zMirrorsOP[1] = zMirrorZMaxOP;
+			zMirrorsZ[0] = z1; zMirrorsP[0].z = z1; zMirrorsOP[0] = zMirrorZ1OP;
+			zMirrorsZ[1] = z2; zMirrorsP[1].z = z2; zMirrorsOP[1] = zMirrorZ2OP;
 			break;
 		case 2:	// 2 = Penrose cavity
 			xMirrorsN = 4;
 			yMirrorsN = 0;
 			zMirrorsN = 4;
 
+			let z3 = z1 - 2/Math.abs(zMirrorZ1OP);
+			let z4 = z2 + 2/Math.abs(zMirrorZ2OP);
+
+			// the x mirrors
 			for(let i=0; i<xMirrorsN; i++) {
-				xMirrorsYMin[i] = yMin+deltaY;
-				xMirrorsYMax[i] = yMax+deltaY;
-				xMirrorsZMin[i] = zMin;
-				xMirrorsZMax[i] = zMax;
+				xMirrorsY1[i] = y1+deltaY;
+				xMirrorsY2[i] = y2+deltaY;
 				xMirrorsP[i].y = deltaY;
 			}
-			xMirrorsX[0] = xMin; xMirrorsP[0].x = xMin;	xMirrorsOP[0] = xMirrorXMinOP; // end mirror 1
-			xMirrorsX[1] = -0.1;
-			xMirrorsX[2] = 0.1;
-			xMirrorsX[3] = xMax; xMirrorsP[3].x = xMax;	xMirrorsOP[3] = xMirrorXMaxOP;	// end mirror 2
 
+			xMirrorsZ1[0] = z3; xMirrorsZ2[0] = z4; xMirrorsX[0] =  2*x1; xMirrorsP[0].x =  2*x1; xMirrorsOP[0] = 0;	// the outer left mirror
+			xMirrorsZ1[1] = z1; xMirrorsZ2[1] = z2; xMirrorsX[1] =    x1; xMirrorsP[1].x =    x1; xMirrorsOP[1] = 0;	// the inner left mirror
+			xMirrorsZ1[2] = z1; xMirrorsZ2[2] = z2; xMirrorsX[2] =   -x1; xMirrorsP[2].x =   -x1; xMirrorsOP[1] = 0;	// the inner right mirror
+			xMirrorsZ1[3] = z3; xMirrorsZ2[3] = z4; xMirrorsX[3] = -2*x1; xMirrorsP[3].x = -2*x1; xMirrorsOP[3] = 0;	// the outer right mirror
+			
+			// the z mirrors
 			for(let i=0; i<zMirrorsN; i++) {
-				zMirrorsYMin[i] = yMin+deltaY;
-				zMirrorsYMax[i] = yMax+deltaY;
-				zMirrorsXMin[i] = xMin;
-				zMirrorsXMax[i] = xMax;
+				zMirrorsY1[i] = y1+deltaY;
+				zMirrorsY2[i] = y2+deltaY;
 				zMirrorsP[i].y = deltaY;
 			}
-			zMirrorsZ[0] = zMin; zMirrorsP[0].z = zMin;	zMirrorsOP[0] = zMirrorZMinOP;	// end mirror 1
-			zMirrorsZ[1] = 0;
-			zMirrorsZ[2] = 0;
-			zMirrorsZ[3] = zMax; zMirrorsP[3].z = zMax; zMirrorsOP[3] = zMirrorZMaxOP;	// end mirror 1
+
+			zMirrorsX1[0] = 2*x1; zMirrorsX2[0] = -2*x1; zMirrorsZ[0] = z3; zMirrorsP[0].z = z3; zMirrorsOP[0] = zMirrorZ1OP;	// the outer top mirror
+			zMirrorsX1[1] = 2*x1; zMirrorsX2[1] =    x1; zMirrorsZ[1] =  0; zMirrorsP[1].z =  0; zMirrorsOP[1] = 0;	// the inner top mirror
+			zMirrorsX1[2] =  -x1; zMirrorsX2[2] = -2*x1; zMirrorsZ[2] =  0; zMirrorsP[2].z =  0; zMirrorsOP[2] = 0;	// the inner bottom mirror
+			zMirrorsX1[3] = 2*x1; zMirrorsX2[3] = -2*x1; zMirrorsZ[3] = z4; zMirrorsP[3].z = z4; zMirrorsOP[3] = zMirrorZ2OP;	// the outer bottom mirror
+
 			break;
 		case 0:	// 0 = single canonical resonator in x direction
 		default:
@@ -266,14 +272,14 @@ function updateUniforms() {
 			zMirrorsN = 0;
 
 			for(let i=0; i<xMirrorsN; i++) {
-				xMirrorsYMin[i] = yMin+deltaY;
-				xMirrorsYMax[i] = yMax+deltaY;
-				xMirrorsZMin[i] = zMin;
-				xMirrorsZMax[i] = zMax;
+				xMirrorsY1[i] = y1+deltaY;
+				xMirrorsY2[i] = y2+deltaY;
+				xMirrorsZ1[i] = z1;
+				xMirrorsZ2[i] = z2;
 				xMirrorsP[i].y = deltaY;
 			}
-			xMirrorsX[0] = xMin; xMirrorsP[0].x = xMin; xMirrorsOP[0] = xMirrorXMinOP;
-			xMirrorsX[1] = xMax; xMirrorsP[1].x = xMax; xMirrorsOP[1] = xMirrorXMaxOP;
+			xMirrorsX[0] = x1; xMirrorsP[0].x = x1; xMirrorsOP[0] = xMirrorX1OP;
+			xMirrorsX[1] = x2; xMirrorsP[1].x = x2; xMirrorsOP[1] = xMirrorX2OP;
 	}
 	raytracingSphereShaderMaterial.uniforms.xMirrorsN.value = xMirrorsN;
 	raytracingSphereShaderMaterial.uniforms.yMirrorsN.value = yMirrorsN;
@@ -284,28 +290,28 @@ function updateUniforms() {
 	
 	// raytracingSphereShaderMaterial.uniforms.xMirrorsN.value = xMirrorsN;
 	// raytracingSphereShaderMaterial.uniforms.xMirrorsX.value = xMirrorsX;	// {x[0], x[1], ...}; note that we require x[0] <= x[1] <= x[2] ...!
-	// raytracingSphereShaderMaterial.uniforms.xMirrorsYMin.value = xMirrorsYMin;	// {yMin[0], yMin[1], ...}
-	// raytracingSphereShaderMaterial.uniforms.xMirrorsYMax.value = xMirrorsYMax;	// {yMax[0], yMax[1], ...}
-	// raytracingSphereShaderMaterial.uniforms.xMirrorsZMin.value = xMirrorsZMin;	// {zMin[0], zMin[1], ...}
-	// raytracingSphereShaderMaterial.uniforms.xMirrorsZMax.value = xMirrorsZMax;	// {zMax[0], zMax[1], ...}
+	// raytracingSphereShaderMaterial.uniforms.xMirrorsY1.value = xMirrorsY1;	// {y1[0], y1[1], ...}
+	// raytracingSphereShaderMaterial.uniforms.xMirrorsY2.value = xMirrorsY2;	// {y2[0], y2[1], ...}
+	// raytracingSphereShaderMaterial.uniforms.xMirrorsZ1.value = xMirrorsZ1;	// {z1[0], z1[1], ...}
+	// raytracingSphereShaderMaterial.uniforms.xMirrorsZ2.value = xMirrorsZ2;	// {z2[0], z2[1], ...}
 	// raytracingSphereShaderMaterial.uniforms.xMirrorsP.value = xMirrorsP;	// {P[0], P[1], ...}
 	// raytracingSphereShaderMaterial.uniforms.xMirrorsOP.value = xMirrorsOP;	// {op[0], op[1], ...}
 
 	// raytracingSphereShaderMaterial.uniforms.yMirrorsN.value = yMirrorsN;
 	// raytracingSphereShaderMaterial.uniforms.yMirrorsY.value = yMirrorsY;	// {y[0], y[1], ...}; note that we require y[0] <= y[1] <= y[2] ...!
-	// raytracingSphereShaderMaterial.uniforms.yMirrorsXMin.value = yMirrorsXMin;	// {xMin[0], xMin[1], ...}
-	// raytracingSphereShaderMaterial.uniforms.yMirrorsXMax.value = yMirrorsXMax;	// {xMax[0], xMax[1], ...}
-	// raytracingSphereShaderMaterial.uniforms.yMirrorsZMin.value = yMirrorsZMin;	// {zMin[0], zMin[1], ...}
-	// raytracingSphereShaderMaterial.uniforms.yMirrorsZMax.value = yMirrorsZMax;	// {zMax[0], zMax[1], ...}
+	// raytracingSphereShaderMaterial.uniforms.yMirrorsX1.value = yMirrorsX1;	// {x1[0], x1[1], ...}
+	// raytracingSphereShaderMaterial.uniforms.yMirrorsX2.value = yMirrorsX2;	// {x2[0], x2[1], ...}
+	// raytracingSphereShaderMaterial.uniforms.yMirrorsZ1.value = yMirrorsZ1;	// {z1[0], z1[1], ...}
+	// raytracingSphereShaderMaterial.uniforms.yMirrorsZ2.value = yMirrorsZ2;	// {z2[0], z2[1], ...}
 	// raytracingSphereShaderMaterial.uniforms.yMirrorsP.value = yMirrorsP;	// {P[0], P[1], ...}
 	// raytracingSphereShaderMaterial.uniforms.yMirrorsOP.value = yMirrorsOP;	// {op[0], op[1], ...}
 
 	// raytracingSphereShaderMaterial.uniforms.zMirrorsN.value = zMirrorsN;
 	// raytracingSphereShaderMaterial.uniforms.zMirrorsZ.value = zMirrorsZ;	// {z[0], z[1], ...}; note that we require z[0] <= z[1] <= z[2] ...!
-	// raytracingSphereShaderMaterial.uniforms.zMirrorsXMin.value = zMirrorsXMin;	// {xMin[0], xMin[1], ...}
-	// raytracingSphereShaderMaterial.uniforms.zMirrorsXMax.value = zMirrorsXMax;	// {xMax[0], xMax[1], ...}
-	// raytracingSphereShaderMaterial.uniforms.zMirrorsYMin.value = zMirrorsYMin;	// {yMin[0], yMin[1], ...}
-	// raytracingSphereShaderMaterial.uniforms.zMirrorsYMax.value = zMirrorsYMax;	// {yMax[0], yMax[1], ...}
+	// raytracingSphereShaderMaterial.uniforms.zMirrorsX1.value = zMirrorsX1;	// {x1[0], x1[1], ...}
+	// raytracingSphereShaderMaterial.uniforms.zMirrorsX2.value = zMirrorsX2;	// {x2[0], x2[1], ...}
+	// raytracingSphereShaderMaterial.uniforms.zMirrorsY1.value = zMirrorsY1;	// {y1[0], y1[1], ...}
+	// raytracingSphereShaderMaterial.uniforms.zMirrorsY2.value = zMirrorsY2;	// {y2[0], y2[1], ...}
 	// raytracingSphereShaderMaterial.uniforms.zMirrorsP.value = zMirrorsP;	// {P[0], P[1], ...}
 	// raytracingSphereShaderMaterial.uniforms.zMirrorsOP.value = zMirrorsOP;	// {op[0], op[1], ...}
 
@@ -392,11 +398,11 @@ function addRaytracingSphere() {
 		}
 	} while (i < 100);
 
-	// let nMaxVectors = [];	// principal points
-	// let nMaxFloats = [];
-	// for(i=0; i<mirrorsNMax; i++) {
-	// 	nMaxVectors.push(new THREE.Vector3(0., 0., 0.));
-	// 	nMaxFloats.push(0.);
+	// let n2Vectors = [];	// principal points
+	// let n2Floats = [];
+	// for(i=0; i<mirrorsN2; i++) {
+	// 	n2Vectors.push(new THREE.Vector3(0., 0., 0.));
+	// 	n2Floats.push(0.);
 	// }
 
 	// the sphere surrouning the camera in all directions
@@ -407,31 +413,31 @@ function addRaytracingSphere() {
 		// wireframe: true,
 		uniforms: {
 			// the set of mirrors in x planes
-			maxTraceLevel: { value: 100 },
+			maxTraceLevel: { value: 50 },
 			xMirrorsN: { value: 0 },
 			xMirrorsX: { value: xMirrorsX },	// {x[0], x[1], ...}; note that we require x[0] <= x[1] <= x[2] ...!
-			xMirrorsYMin: { value: xMirrorsYMin },	// {yMin[0], yMin[1], ...}
-			xMirrorsYMax: { value: xMirrorsYMax },	// {yMax[0], yMax[1], ...}
-			xMirrorsZMin: { value: xMirrorsZMin },	// {zMin[0], zMin[1], ...}
-			xMirrorsZMax: { value: xMirrorsZMax },	// {zMax[0], zMax[1], ...}
+			xMirrorsY1: { value: xMirrorsY1 },	// {y1[0], y1[1], ...}
+			xMirrorsY2: { value: xMirrorsY2 },	// {y2[0], y2[1], ...}
+			xMirrorsZ1: { value: xMirrorsZ1 },	// {z1[0], z1[1], ...}
+			xMirrorsZ2: { value: xMirrorsZ2 },	// {z2[0], z2[1], ...}
 			xMirrorsP: { value: xMirrorsP },
 			xMirrorsOP: { value: xMirrorsOP },
 			// the set of mirrors in y planes
 			yMirrorsN: { value: 0 },
 			yMirrorsY: { value: yMirrorsY },	// {y[0], y[1], ...}; note that we require y[0] <= y[1] <= y[2] ...!
-			yMirrorsXMin: { value: yMirrorsXMin },	// {xMin[0], xMin[1], ...}
-			yMirrorsXMax: { value: yMirrorsXMax },	// {xMax[0], xMax[1], ...}
-			yMirrorsZMin: { value: yMirrorsZMin },	// {zMin[0], zMin[1], ...}
-			yMirrorsZMax: { value: yMirrorsZMax },	// {zMax[0], zMax[1], ...}
+			yMirrorsX1: { value: yMirrorsX1 },	// {x1[0], x1[1], ...}
+			yMirrorsX2: { value: yMirrorsX2 },	// {x2[0], x2[1], ...}
+			yMirrorsZ1: { value: yMirrorsZ1 },	// {z1[0], z1[1], ...}
+			yMirrorsZ2: { value: yMirrorsZ2 },	// {z2[0], z2[1], ...}
 			yMirrorsP: { value: yMirrorsP },
 			yMirrorsOP: { value: yMirrorsOP },
 			// the set of mirrors in z planes
 			zMirrorsN: { value: 0 },
 			zMirrorsZ: { value: zMirrorsZ },	// {z[0], z[1], ...}; note that we require z[0] <= z[1] <= z[2] ...!
-			zMirrorsXMin: { value: zMirrorsXMin },	// {xMin[0], xMin[1], ...}
-			zMirrorsXMax: { value: zMirrorsXMax },	// {xMax[0], xMax[1], ...}
-			zMirrorsYMin: { value: zMirrorsYMin },	// {yMin[0], yMin[1], ...}
-			zMirrorsYMax: { value: zMirrorsYMax },	// {yMax[0], yMax[1], ...}
+			zMirrorsX1: { value: zMirrorsX1 },	// {x1[0], x1[1], ...}
+			zMirrorsX2: { value: zMirrorsX2 },	// {x2[0], x2[1], ...}
+			zMirrorsY1: { value: zMirrorsY1 },	// {y1[0], y1[1], ...}
+			zMirrorsY2: { value: zMirrorsY2 },	// {y2[0], y2[1], ...}
 			zMirrorsP: { value: zMirrorsP },
 			zMirrorsOP: { value: zMirrorsOP },
 			backgroundTexture: { value: backgroundTexture },
@@ -467,37 +473,37 @@ function addRaytracingSphere() {
 
 			// the mirrors
 
-			const int mirrorsNMax = 4;
+			const int mirrorsN2 = 4;
 
 			// the set of mirrors in x planes
 			uniform int xMirrorsN;	// number of x mirrors
-			uniform float xMirrorsX[mirrorsNMax];	// {x[0], x[1], ...}; note that we require x[0] <= x[1] <= x[2] ...!
-			uniform float xMirrorsYMin[mirrorsNMax];	// {yMin[0], yMin[1], ...}
-			uniform float xMirrorsYMax[mirrorsNMax];	// {yMax[0], yMax[1], ...}
-			uniform float xMirrorsZMin[mirrorsNMax];	// {zMin[0], zMin[1], ...}
-			uniform float xMirrorsZMax[mirrorsNMax];	// {zMax[0], zMax[1], ...}
-			uniform vec3 xMirrorsP[mirrorsNMax];
-			uniform float xMirrorsOP[mirrorsNMax];
+			uniform float xMirrorsX[mirrorsN2];	// {x[0], x[1], ...}; note that we require x[0] <= x[1] <= x[2] ...!
+			uniform float xMirrorsY1[mirrorsN2];	// {y1[0], y1[1], ...}
+			uniform float xMirrorsY2[mirrorsN2];	// {y2[0], y2[1], ...}
+			uniform float xMirrorsZ1[mirrorsN2];	// {z1[0], z1[1], ...}
+			uniform float xMirrorsZ2[mirrorsN2];	// {z2[0], z2[1], ...}
+			uniform vec3 xMirrorsP[mirrorsN2];
+			uniform float xMirrorsOP[mirrorsN2];
 
 			// the set of mirrors in y planes
 			uniform int yMirrorsN;	// number of x mirrors
-			uniform float yMirrorsY[mirrorsNMax];	// {y[0], y[1], ...}; note that we require y[0] <= y[1] <= y[2] ...!
-			uniform float yMirrorsXMin[mirrorsNMax];	// {xMin[0], xMin[1], ...}
-			uniform float yMirrorsXMax[mirrorsNMax];	// {xMax[0], xMax[1], ...}
-			uniform float yMirrorsZMin[mirrorsNMax];	// {zMin[0], zMin[1], ...}
-			uniform float yMirrorsZMax[mirrorsNMax];	// {zMax[0], zMax[1], ...}
-			uniform vec3 yMirrorsP[mirrorsNMax];
-			uniform float yMirrorsOP[mirrorsNMax];
+			uniform float yMirrorsY[mirrorsN2];	// {y[0], y[1], ...}; note that we require y[0] <= y[1] <= y[2] ...!
+			uniform float yMirrorsX1[mirrorsN2];	// {x1[0], x1[1], ...}
+			uniform float yMirrorsX2[mirrorsN2];	// {x2[0], x2[1], ...}
+			uniform float yMirrorsZ1[mirrorsN2];	// {z1[0], z1[1], ...}
+			uniform float yMirrorsZ2[mirrorsN2];	// {z2[0], z2[1], ...}
+			uniform vec3 yMirrorsP[mirrorsN2];
+			uniform float yMirrorsOP[mirrorsN2];
 
 			// the set of mirrors in z planes
 			uniform int zMirrorsN;	// number of z mirrors
-			uniform float zMirrorsZ[mirrorsNMax];	// {z[0], z[1], ...}; note that we require z[0] <= z[1] <= z[2] ...!
-			uniform float zMirrorsXMin[mirrorsNMax];	// {xMin[0], xMin[1], ...}
-			uniform float zMirrorsXMax[mirrorsNMax];	// {xMax[0], xMax[1], ...}
-			uniform float zMirrorsYMin[mirrorsNMax];	// {yMin[0], yMin[1], ...}
-			uniform float zMirrorsYMax[mirrorsNMax];	// {yMax[0], yMax[1], ...}
-			uniform vec3 zMirrorsP[mirrorsNMax];
-			uniform float zMirrorsOP[mirrorsNMax];
+			uniform float zMirrorsZ[mirrorsN2];	// {z[0], z[1], ...}; note that we require z[0] <= z[1] <= z[2] ...!
+			uniform float zMirrorsX1[mirrorsN2];	// {x1[0], x1[1], ...}
+			uniform float zMirrorsX2[mirrorsN2];	// {x2[0], x2[1], ...}
+			uniform float zMirrorsY1[mirrorsN2];	// {y1[0], y1[1], ...}
+			uniform float zMirrorsY2[mirrorsN2];	// {y2[0], y2[1], ...}
+			uniform vec3 zMirrorsP[mirrorsN2];
+			uniform float zMirrorsOP[mirrorsN2];
 
 			// background
 			uniform sampler2D backgroundTexture;
@@ -785,10 +791,10 @@ function addRaytracingSphere() {
 						vec3 ip = s + (xMirrorsX[i] - s.x)*d1;	// the intersection point with the plane of mirror #i
 						// check if the y and z components are within the rectangle
 						if(
-							(xMirrorsYMin[i] <= ip.y) &&
-							(ip.y <= xMirrorsYMax[i]) &&
-							(xMirrorsZMin[i] <= ip.z) &&
-							(ip.z <= xMirrorsZMax[i])						
+							(xMirrorsY1[i] <= ip.y) &&
+							(ip.y <= xMirrorsY2[i]) &&
+							(xMirrorsZ1[i] <= ip.z) &&
+							(ip.z <= xMirrorsZ2[i])						
 						) {
 							// the intersection point is on the mirror; return it
 							intersectionPosition = ip;
@@ -848,10 +854,10 @@ function addRaytracingSphere() {
 						vec3 ip = s + (yMirrorsY[i] - s.y)*d1;	// the intersection point with the plane of mirror #i
 						// check if the x and z components are within the rectangle
 						if(
-							(yMirrorsXMin[i] <= ip.x) &&
-							(ip.x <= yMirrorsXMax[i]) &&
-							(yMirrorsZMin[i] <= ip.z) &&
-							(ip.z <= yMirrorsZMax[i])						
+							(yMirrorsX1[i] <= ip.x) &&
+							(ip.x <= yMirrorsX2[i]) &&
+							(yMirrorsZ1[i] <= ip.z) &&
+							(ip.z <= yMirrorsZ2[i])						
 						) {
 							// the intersection point is on the mirror; return it
 							intersectionPosition = ip;
@@ -911,10 +917,10 @@ function addRaytracingSphere() {
 						vec3 ip = s + (zMirrorsZ[i] - s.z)*d1;	// the intersection point with the plane of mirror #i
 						// check if the x and y components are within the rectangle
 						if(
-							(zMirrorsXMin[i] <= ip.x) &&
-							(ip.x <= zMirrorsXMax[i]) &&					
-							(zMirrorsYMin[i] <= ip.y) &&
-							(ip.y <= zMirrorsYMax[i])
+							(zMirrorsX1[i] <= ip.x) &&
+							(ip.x <= zMirrorsX2[i]) &&					
+							(zMirrorsY1[i] <= ip.y) &&
+							(ip.y <= zMirrorsY2[i])
 						) {
 							// the intersection point is on the mirror; return it
 							intersectionPosition = ip;
@@ -1126,22 +1132,23 @@ function createGUI() {
 			resonatorType = (resonatorType + 1) % 3;
 			resonatorTypeControl.name( resonatorType2String() );
 			enableDisableResonatorControls();
+			// createGUI();
 			// opz0Control.disable( resonatorType == 0 );
 			// opz1Control.disable( resonatorType == 0 );
 			// z0Control.disable( resonatorType == 0 );
 			// z1Control.disable( resonatorType == 0 );
 		},
 		// optical powers
-		opxMin: xMirrorXMinOP,
-		opxMax: xMirrorXMaxOP,
-		opzMin: zMirrorZMinOP,
-		opzMax: zMirrorZMaxOP,
-		xMin: xMin,
-		xMax: xMax,
-		zMin: zMin,
-		zMax: zMax,
+		opx1: xMirrorX1OP,
+		opx2: xMirrorX2OP,
+		opz1: zMirrorZ1OP,
+		opz2: zMirrorZ2OP,
+		x1: x1,
+		x2: x2,
+		z1: z1,
+		z2: z2,
 		resonatorY: resonatorY,
-		makeEyeLevel: function() { resonatorY = camera.position.y; }
+		makeEyeLevel: function() { resonatorY = camera.position.y; resonatorYControl.setValue(resonatorY); }
 		// meshRotX: meshRotationX,
 		// meshRotY: meshRotationY,
 		// meshRotZ: meshRotationZ
@@ -1149,21 +1156,23 @@ function createGUI() {
 
 	gui.add( GUIParams, 'maxTraceLevel', 1, 200, 1 ).name( "max. TL" ).onChange( (mtl) => {raytracingSphereShaderMaterial.uniforms.maxTraceLevel.value = mtl; } );
 	resonatorTypeControl = gui.add( GUIParams, 'resonatorType' ).name( resonatorType2String() );
-	gui.add( GUIParams, 'opxMin', -10, 10, 0.001 ).name( "OP<sub><i>x</i>,min</sub>" ).onChange( (o) => { xMirrorXMinOP = o; } );
-	gui.add( GUIParams, 'opxMax', -10, 10, 0.001 ).name( "OP<sub><i>x</i>,max</sub>" ).onChange( (o) => { xMirrorXMaxOP = o; } );
-	opz0Control = gui.add( GUIParams, 'opzMin', -10, 10, 0.001 ).name( "OP<sub><i>z</i>,min</sub>" ).onChange( (o) => { zMirrorZMinOP = o; } );
-	opz1Control = gui.add( GUIParams, 'opzMax', -10, 10, 0.001 ).name( "OP<sub><i>z</i>,max</sub>" ).onChange( (o) => { zMirrorZMaxOP = o; } );
+	gui.add( GUIParams, 'opx1', -10, 10, 0.001 ).name( "OP<sub><i>x</i>,1</sub>" ).onChange( (o) => { xMirrorX1OP = o; } );
+	gui.add( GUIParams, 'opx2', -10, 10, 0.001 ).name( "OP<sub><i>x</i>,2</sub>" ).onChange( (o) => { xMirrorX2OP = o; } );
+	// if(resonatorType != 0) {
+		opz0Control = gui.add( GUIParams, 'opz1', -10, 10, 0.001 ).name( "OP<sub><i>z</i>,1</sub>" ).onChange( (o) => { zMirrorZ1OP = o; } );
+		opz1Control = gui.add( GUIParams, 'opz2', -10, 10, 0.001 ).name( "OP<sub><i>z</i>,2</sub>" ).onChange( (o) => { zMirrorZ2OP = o; } );
+	// }
 
-	// gui.add( GUIParams, 'x0', -10, -0.1, 0.001 ).name( "<i>x</i><sub>0</sub>" ).onChange( (x) => { xMirrorsX[0] = x; xMirrorsP[0].x = x; for(let i=0; i<mirrorsNMax; i++) zMirrorsXMin[i] = x; } );
-	// gui.add( GUIParams, 'x1',  0.1,  10, 0.001 ).name( "<i>x</i><sub>1</sub>" ).onChange( (x) => { xMirrorsX[1] = x; xMirrorsP[1].x = x; for(let i=0; i<mirrorsNMax; i++) zMirrorsXMax[i] = x; } );
-	// gui.add( GUIParams, 'z0', -10, -0.1, 0.001 ).name( "<i>z</i><sub>0</sub>" ).onChange( (z) => { zMirrorsZ[0] = z; zMirrorsP[0].z = z; for(let i=0; i<mirrorsNMax; i++) xMirrorsZMin[i] = z; } );
-	// gui.add( GUIParams, 'z1',  0.1,  10, 0.001 ).name( "<i>z</i><sub>1</sub>" ).onChange( (z) => { zMirrorsZ[1] = z; zMirrorsP[1].z = z; for(let i=0; i<mirrorsNMax; i++) xMirrorsZMax[i] = z; } );
-	gui.add( GUIParams, 'xMin', -10, -0.1, 0.001 ).name( "<i>x</i><sub>min</sub>" ).onChange( (x) => { xMin = x; } );
-	gui.add( GUIParams, 'xMax',  0.1,  10, 0.001 ).name( "<i>x</i><sub>max</sub>" ).onChange( (x) => { xMax = x; } );
-	z0Control = gui.add( GUIParams, 'zMin', -10, -0.1, 0.001 ).name( "<i>z</i><sub>min</sub>" ).onChange( (z) => { zMin = z; } );
-	z1Control = gui.add( GUIParams, 'zMax',  0.1,  10, 0.001 ).name( "<i>z</i><sub>max</sub>" ).onChange( (z) => { zMax = z; } );
+	// gui.add( GUIParams, 'x0', -10, -0.1, 0.001 ).name( "<i>x</i><sub>0</sub>" ).onChange( (x) => { xMirrorsX[0] = x; xMirrorsP[0].x = x; for(let i=0; i<mirrorsN2; i++) zMirrorsX1[i] = x; } );
+	// gui.add( GUIParams, 'x1',  0.1,  10, 0.001 ).name( "<i>x</i><sub>1</sub>" ).onChange( (x) => { xMirrorsX[1] = x; xMirrorsP[1].x = x; for(let i=0; i<mirrorsN2; i++) zMirrorsX2[i] = x; } );
+	// gui.add( GUIParams, 'z0', -10, -0.1, 0.001 ).name( "<i>z</i><sub>0</sub>" ).onChange( (z) => { zMirrorsZ[0] = z; zMirrorsP[0].z = z; for(let i=0; i<mirrorsN2; i++) xMirrorsZ1[i] = z; } );
+	// gui.add( GUIParams, 'z1',  0.1,  10, 0.001 ).name( "<i>z</i><sub>1</sub>" ).onChange( (z) => { zMirrorsZ[1] = z; zMirrorsP[1].z = z; for(let i=0; i<mirrorsN2; i++) xMirrorsZ2[i] = z; } );
+	gui.add( GUIParams, 'x1', -10, -0.1, 0.001 ).name( "<i>x</i><sub>1</sub>" ).onChange( (x) => { x1 = x; } );
+	gui.add( GUIParams, 'x2',  0.1,  10, 0.001 ).name( "<i>x</i><sub>2</sub>" ).onChange( (x) => { x2 = x; } );
+	z0Control = gui.add( GUIParams, 'z1', -10, -0.1, 0.001 ).name( "<i>z</i><sub>1</sub>" ).onChange( (z) => { z1 = z; } );
+	z1Control = gui.add( GUIParams, 'z2',  0.1,  10, 0.001 ).name( "<i>z</i><sub>2</sub>" ).onChange( (z) => { z2 = z; } );
 
-	gui.add( GUIParams, 'resonatorY',  0, 3).name( "<i>y</i><sub>resonator</sub>" ).onChange( (y) => { resonatorY = y; } );
+	resonatorYControl = gui.add( GUIParams, 'resonatorY',  0, 3, 0.001).name( "<i>y</i><sub>resonator</sub>" ).onChange( (y) => { resonatorY = y; } );
 	gui.add( GUIParams, 'makeEyeLevel' ).name( 'Move resonator to eye level' );
 
 	// gui.add( GUIParams, 'meshRotX', -Math.PI, Math.PI ).name('Rot x').onChange( (a) => { meshRotationX = a; })
@@ -1205,19 +1214,21 @@ function createGUI() {
 	// folderSettings.add( params, 'Show/hide info');
 	// folderSettings.close();
 
-	enableDisableResonatorControls();
+	// enableDisableResonatorControls();
 
 	// create the GUI mesh at the end to make sure that it includes all controls
 	GUIMesh = new HTMLMesh( gui.domElement );
 	GUIMesh.visible = false;
 	controlsVisibleControl.name( 'Controls '+(GUIMesh.visible?'visible':'hidden') );
+
+	enableDisableResonatorControls();
 }
 
 function enableDisableResonatorControls() {
 	opz0Control.disable( resonatorType == 0 );
 	opz1Control.disable( resonatorType == 0 );
-	z0Control.disable( resonatorType == 0 );
-	z1Control.disable( resonatorType == 0 );
+	// z0Control.disable( resonatorType == 0 );
+	// z1Control.disable( resonatorType == 0 );
 }
 
 function background2String() {
@@ -1260,69 +1271,69 @@ function initMirrors() {
 	xMirrorsN = 2;
 	// initialise all the elements to default values
 	xMirrorsX = [];	// {x[0], x[1], ...}; note that we require x[0] <= x[1] <= x[2] ...!
-	xMirrorsYMin = [];	// {yMin[0], yMin[1], ...}
-	xMirrorsYMax = [];	// {yMax[0], yMax[1], ...}
-	xMirrorsZMin = [];	// {zMin[0], zMin[1], ...}
-	xMirrorsZMax = [];	// {zMax[0], zMax[1], ...}
+	xMirrorsY1 = [];	// {y1[0], y1[1], ...}
+	xMirrorsY2 = [];	// {y2[0], y2[1], ...}
+	xMirrorsZ1 = [];	// {z1[0], z1[1], ...}
+	xMirrorsZ2 = [];	// {z2[0], z2[1], ...}
 	xMirrorsP = [];	// principal points
 	xMirrorsOP = [];	// optical powers
-	for(let i=0; i<mirrorsNMax; i++) {
+	for(let i=0; i<mirrorsN2; i++) {
 		xMirrorsX.push(0.0);
-		xMirrorsYMin.push(yMin+resonatorY);
-		xMirrorsYMax.push(yMax+resonatorY);
-		xMirrorsZMin.push(zMin);
-		xMirrorsZMax.push(zMax);
+		xMirrorsY1.push(y1+resonatorY);
+		xMirrorsY2.push(y2+resonatorY);
+		xMirrorsZ1.push(z1);
+		xMirrorsZ2.push(z2);
 		xMirrorsP.push(new THREE.Vector3(0., resonatorY, 0.));
 		xMirrorsOP.push(-1.);
 	}
 	// set the actual values where those differ from the default ones
-	xMirrorsX[0] = xMin; xMirrorsP[0].x = xMin;
-	// xMirrorsX[1] = 0.2; xMirrorsP[1].x = 0.2; xMirrorsYMax[1] = 2; xMirrorsZMax[1] = 0;
-	xMirrorsX[1] = xMax; xMirrorsP[1].x = xMax;
+	xMirrorsX[0] = x1; xMirrorsP[0].x = x1;
+	// xMirrorsX[1] = 0.2; xMirrorsP[1].x = 0.2; xMirrorsY2[1] = 2; xMirrorsZ2[1] = 0;
+	xMirrorsX[1] = x2; xMirrorsP[1].x = x2;
 
 	yMirrorsN = 0;
 	// initialise all the elements to default values
 	yMirrorsY = [];	// {y[0], y[1], ...}; note that we require y[0] <= y[1] <= y[2] ...!
-	yMirrorsXMin = [];	// {xMin[0], xMin[1], ...}
-	yMirrorsXMax = [];	// {xMax[0], xMax[1], ...}
-	yMirrorsZMin = [];	// {zMin[0], zMin[1], ...}
-	yMirrorsZMax = [];	// {zMax[0], zMax[1], ...}
+	yMirrorsX1 = [];	// {x1[0], x1[1], ...}
+	yMirrorsX2 = [];	// {x2[0], x2[1], ...}
+	yMirrorsZ1 = [];	// {z1[0], z1[1], ...}
+	yMirrorsZ2 = [];	// {z2[0], z2[1], ...}
 	yMirrorsP = [];	// principal points
 	yMirrorsOP = [];	// optical powers
-	for(let i=0; i<mirrorsNMax; i++) {
+	for(let i=0; i<mirrorsN2; i++) {
 		yMirrorsY.push(0.0);
-		yMirrorsXMin.push(xMin);
-		yMirrorsXMax.push(xMax);
-		yMirrorsZMin.push(zMin);
-		yMirrorsZMax.push(zMax);
+		yMirrorsX1.push(x1);
+		yMirrorsX2.push(x2);
+		yMirrorsZ1.push(z1);
+		yMirrorsZ2.push(z2);
 		yMirrorsP.push(new THREE.Vector3(0., resonatorY, 0.));
 		yMirrorsOP.push(0.);
 	}
 	// set the actual values where those differ from the default ones
-	yMirrorsY[0] = yMin+resonatorY; yMirrorsP[0].y = yMin+resonatorY;
-	yMirrorsY[1] = yMax+resonatorY; yMirrorsP[1].y = yMax+resonatorY;
+	yMirrorsY[0] = y1+resonatorY; yMirrorsP[0].y = y1+resonatorY;
+	yMirrorsY[1] = y2+resonatorY; yMirrorsP[1].y = y2+resonatorY;
 
 	zMirrorsN = 2;
 	// initialise all the elements to default values
 	zMirrorsZ = [];	// {z[0], z[1], ...}; note that we require z[0] <= z[1] <= z[2] ...!
-	zMirrorsXMin = [];	// {xMin[0], xMin[1], ...}
-	zMirrorsXMax = [];	// {xMax[0], xMax[1], ...}
-	zMirrorsYMin = [];	// {yMin[0], yMin[1], ...}
-	zMirrorsYMax = [];	// {yMax[0], yMax[1], ...}
+	zMirrorsX1 = [];	// {x1[0], x1[1], ...}
+	zMirrorsX2 = [];	// {x2[0], x2[1], ...}
+	zMirrorsY1 = [];	// {y1[0], y1[1], ...}
+	zMirrorsY2 = [];	// {y2[0], y2[1], ...}
 	zMirrorsP = [];	// principal points
 	zMirrorsOP = [];	// optical powers
-	for(let i=0; i<mirrorsNMax; i++) {
+	for(let i=0; i<mirrorsN2; i++) {
 		zMirrorsZ.push(0.0);
-		zMirrorsXMin.push(xMin);
-		zMirrorsXMax.push(xMax);
-		zMirrorsYMin.push(yMin+resonatorY);
-		zMirrorsYMax.push(yMax+resonatorY);
+		zMirrorsX1.push(x1);
+		zMirrorsX2.push(x2);
+		zMirrorsY1.push(y1+resonatorY);
+		zMirrorsY2.push(y2+resonatorY);
 		zMirrorsP.push(new THREE.Vector3(0., resonatorY, 0.));
 		zMirrorsOP.push(0.1);
 	}
 	// set the actual values where those differ from the default ones
-	zMirrorsZ[0] = zMin; zMirrorsP[0].z = zMin;
-	zMirrorsZ[1] = zMax; zMirrorsP[1].z = zMax;
+	zMirrorsZ[0] = z1; zMirrorsP[0].z = z1;
+	zMirrorsZ[1] = z2; zMirrorsP[1].z = z2;
 }
 
 function addXRInteractivity() {
@@ -1702,7 +1713,7 @@ async function share() {
  */
 function createStatus() {
 	status = document.getElementById('status');
-	postStatus("Welcome!");
+	postStatus(`${appName} welcomes you!`);
 }
 
 function postStatus(text) {
