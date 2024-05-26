@@ -174,9 +174,7 @@ function init() {
 }
 
 function animate() {
-
 	renderer.setAnimationLoop( render );
-
 }
 
 function render() {
@@ -1208,7 +1206,10 @@ function createGUI() {
 	// folderSettings.close();
 
 	enableDisableResonatorControls();
+
+	// create the GUI mesh at the end to make sure that it includes all controls
 	GUIMesh = new HTMLMesh( gui.domElement );
+	GUIMesh.visible = false;
 	controlsVisibleControl.name( 'Controls '+(GUIMesh.visible?'visible':'hidden') );
 }
 
@@ -1361,7 +1362,7 @@ function addXRInteractivity() {
 	scene.add( group );
 
 	// place this below the resonator
-	GUIMesh = new HTMLMesh( gui.domElement );
+	// GUIMesh = new HTMLMesh( gui.domElement );
 	GUIMesh.position.x = 0;
 	GUIMesh.position.y = resonatorY - 1.25;
 	GUIMesh.position.z = -0.4;
