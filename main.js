@@ -1099,7 +1099,7 @@ function createGUI() {
 	// const 
 	gui = new GUI();
 	// gui.hide();
-	GUIMesh = new HTMLMesh( gui.domElement );
+	// GUIMesh = new HTMLMesh( gui.domElement );	// placeholder
 
 	GUIParams = {
 		maxTraceLevel: raytracingSphereShaderMaterial.uniforms.maxTraceLevel.value,
@@ -1194,8 +1194,9 @@ function createGUI() {
 	gui.add( GUIParams, 'No of rays', 1, 100, 1).onChange( (n) => { noOfRays = n; } );
 	gui.add( GUIParams, 'Point forward (in -<b>z</b> direction)' );
 	backgroundControl = gui.add( GUIParams, 'background' ).name( background2String() );
+
 	if(renderer.xr.enabled) {
-		controlsVisibleControl = gui.add( GUIParams, 'controlsVisible' ).name( 'Controls '+(GUIMesh.visible?'visible':'hidden') );
+		controlsVisibleControl = gui.add( GUIParams, 'controlsVisible' );
 	}
 	// folderVirtualCamera.close();
 
@@ -1206,8 +1207,9 @@ function createGUI() {
 	// folderSettings.add( params, 'Show/hide info');
 	// folderSettings.close();
 
-	GUIMesh = new HTMLMesh( gui.domElement );
 	enableDisableResonatorControls();
+	GUIMesh = new HTMLMesh( gui.domElement );
+	controlsVisibleControl.name( 'Controls '+(GUIMesh.visible?'visible':'hidden') );
 }
 
 function enableDisableResonatorControls() {
