@@ -1363,7 +1363,7 @@ function addXRInteractivity() {
 	// place this below the resonator
 	GUIMesh = new HTMLMesh( gui.domElement );
 	GUIMesh.position.x = 0;
-	GUIMesh.position.y = resonatorY - 1;
+	GUIMesh.position.y = resonatorY - 1.25;
 	GUIMesh.position.z = -0.4;
 	GUIMesh.rotation.x = -Math.PI/4;
 	GUIMesh.scale.setScalar( 2 );
