@@ -18,6 +18,7 @@ import * as THREE from 'three';
 
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { DragControls } from 'three/addons/controls/DragControls.js';
 import { VRButton } from 'three/addons/webxr/VRButton.js';
 
 import { HTMLMesh } from 'three/addons/interactive/HTMLMesh.js';
@@ -32,7 +33,8 @@ let scene;
 let renderer;
 let backgroundTexture;
 let camera;
-let controls;
+let orbitControls;
+let dragControls;
 let raytracingSphere;
 let raytracingSphereShaderMaterial;
 
@@ -84,7 +86,7 @@ let resonatorY = 1.5;
 	
 let fovScreen = 68;
 
-let raytracingSphereRadius = 20.0;
+let raytracingSphereRadius = 100.0;
 
 // camera with wide aperture
 let apertureRadius = 0.0;
@@ -154,6 +156,8 @@ function init() {
 	// the controls menu
 	// refreshGUI();
 	createGUI();
+
+	addDragControls();
 
 	// check if VR is supported (see https://developer.mozilla.org/en-US/docs/Web/API/XRSystem/isSessionSupported)...
 	// if (navigator.xr) {
@@ -698,7 +702,7 @@ function addRaytracingSphere() {
 				float l = length(d);
 				float phi = atan(d.z, d.x) + PI;
 				float theta = acos(d.y/l);
-				return texture2D(backgroundTexture, vec2(phi/(2.*PI), 1.-theta/PI));
+				return texture2D(backgroundTexture, vec2(mod(phi/(2.*PI), 1.0), 1.-theta/PI));
 			}
 
 			bool findNearestIntersectionWithSphere(
@@ -1565,7 +1569,7 @@ function  pointForward() {
 	camera.position.x = 0;
 	camera.position.y = 0;
 	camera.position.z = r;
-	controls.update();
+	orbitControls.update();
 	postStatus('Pointing camera forwards (in -<b>z</b> direction)');
 }
 
@@ -1587,20 +1591,36 @@ function recreateVideoFeeds() {
 function addOrbitControls() {
 	// controls
 
-	controls = new OrbitControls( camera, renderer.domElement );
+	orbitControls = new OrbitControls( camera, renderer.domElement );
 	// controls = new OrbitControls( cameraOutside, renderer.domElement );
-	controls.listenToKeyEvents( window ); // optional
+	orbitControls.listenToKeyEvents( window ); // optional
 
 	//controls.addEventListener( 'change', render ); // call this only in static scenes (i.e., if there is no animation loop)
-	controls.addEventListener( 'change', cameraPositionChanged );
+	orbitControls.addEventListener( 'change', cameraPositionChanged );
 
-	controls.enableDamping = false; // an animation loop is required when either damping or auto-rotation are enabled
-	controls.dampingFactor = 0.05;
+	orbitControls.enableDamping = false; // an animation loop is required when either damping or auto-rotation are enabled
+	orbitControls.dampingFactor = 0.05;
 
-	controls.enablePan = true;
-	controls.enableZoom = true;
+	orbitControls.enablePan = true;
+	orbitControls.enableZoom = true;
 
-	controls.maxPolarAngle = Math.PI;
+	orbitControls.maxPolarAngle = Math.PI;
+}
+
+function addDragControls() {
+	let objects = [];
+	objects.push(GUIMesh);
+
+	dragControls = new DragControls( objects, camera, renderer.domElement );
+
+	// add event listener to highlight dragged objects
+	dragControls.addEventListener( 'dragstart', function ( event ) {
+		event.object.material.emissive.set( 0xaaaaaa );
+	} );
+
+	dragControls.addEventListener( 'dragend', function ( event ) {
+		event.object.material.emissive.set( 0x000000 );
+	} );
 }
 
 function cameraPositionChanged() {
