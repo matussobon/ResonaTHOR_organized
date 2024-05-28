@@ -157,7 +157,7 @@ function init() {
 	// refreshGUI();
 	createGUI();
 
-	addDragControls();
+	// addDragControls();
 
 	// check if VR is supported (see https://developer.mozilla.org/en-US/docs/Web/API/XRSystem/isSessionSupported)...
 	// if (navigator.xr) {
