@@ -104,7 +104,7 @@ let info;
 // the menu
 let gui;
 let GUIParams;
-let autofocusControl, focusDistanceControl, resonatorTypeControl, opz0Control, opz1Control, z0Control, z1Control, resonatorYControl, backgroundControl, controlsVisibleControl;
+let autofocusControl, focusDistanceControl, resonatorTypeControl, opz0Control, opz1Control, z0Control, z1Control, resonatorYControl, cylindricalLensesControl, backgroundControl, controlsVisibleControl;
 
 let GUIMesh;
 let showGUIMesh;
@@ -444,6 +444,7 @@ function addRaytracingSphere() {
 			zMirrorsY2: { value: zMirrorsY2 },	// {y2[0], y2[1], ...}
 			zMirrorsP: { value: zMirrorsP },
 			zMirrorsOP: { value: zMirrorsOP },
+			cylindricalLenses: { value: true },
 			backgroundTexture: { value: backgroundTexture },
 			focusDistance: { value: 10.0 },
 			apertureXHat: { value: new THREE.Vector3(1, 0, 0) },
@@ -460,7 +461,7 @@ function addRaytracingSphere() {
 
 			void main()	{
 				// projectionMatrix, modelViewMatrix, position -> passed in from Three.js
-				intersectionPoint = position.xyz;
+				intersectionPoint = (modelMatrix * vec4(position, 1.0)).xyz;	// position.xyz;
   				gl_Position = projectionMatrix
 					* modelViewMatrix
 					* vec4(position, 1.0);
@@ -508,6 +509,8 @@ function addRaytracingSphere() {
 			uniform float zMirrorsY2[mirrorsN2];	// {y2[0], y2[1], ...}
 			uniform vec3 zMirrorsP[mirrorsN2];
 			uniform float zMirrorsOP[mirrorsN2];
+
+			uniform bool cylindricalLenses;
 
 			// background
 			uniform sampler2D backgroundTexture;
@@ -587,7 +590,7 @@ function addRaytracingSphere() {
 			// ideal thin lens or ideal thin (imaging) mirror, or a phase hologram thereof.
 			// d is the incident light-ray direction;
 			// pi is a 2D vector containing the vector PI = I-P, i.e. the vector from the principal point P to the intersection point I;
-			// TO SIMULATE A CYLINDRICAL LENS with (normalised) optical-power direction opdHat, set IP not to (I-P), but to
+			// TO SIMULATE A CYLINDRICAL LENS with (normalised) optical-power direction opdHat, set pi not to (I-P), but to
 			// the component of (I-P) in the direction of the optical-power direction, opdHat*dot(I-P, opdHat);
 			// nHat is the normalised normal to the lens/mirror (a factor -1 doesn't matter);
 			// op is the optical power;
@@ -1075,7 +1078,12 @@ function addRaytracingSphere() {
 							tl = -10;
 						} else {
 							s = ip;
-							lensOrMirrorDeflect(d, s - mp, mNHat, mop, -1., false);
+							vec3 p2i = s - mp;
+							if(cylindricalLenses) {
+								p2i.y = 0.0;
+								// p2i.z = 0.0;
+							}
+							lensOrMirrorDeflect(d, p2i, mNHat, mop, -1., false);
 							b *= vec4(0.9, 0.9, 0.9, 1.);
 							// color = vec4(float(si)/2., 0., float(ii)/2., 1.);
 						}
@@ -1121,7 +1129,7 @@ function createGUI() {
 			focusDistanceControl.disable(autofocus);
 		},	// (autofocus?'On':'Off'),
 		// 'Autofocus': autofocus,
-			'Point forward (in -<b>z</b> direction)': pointForward,
+		'Point forward (in -<b>z</b> direction)': pointForward,
 		'Show/hide info': toggleInfoVisibility,
 		controlsVisible: function() {
 			GUIMesh.visible = !GUIMesh.visible;
@@ -1152,6 +1160,10 @@ function createGUI() {
 		z1: z1,
 		z2: z2,
 		resonatorY: resonatorY,
+		cylindricalLenses: function() {
+			raytracingSphereShaderMaterial.uniforms.cylindricalLenses.value = !raytracingSphereShaderMaterial.uniforms.cylindricalLenses.value;
+			cylindricalLensesControl.name( cylindricalLenses2String() );
+		},
 		makeEyeLevel: function() { resonatorY = camera.position.y; resonatorYControl.setValue(resonatorY); }
 		// meshRotX: meshRotationX,
 		// meshRotY: meshRotationY,
@@ -1178,6 +1190,8 @@ function createGUI() {
 
 	resonatorYControl = gui.add( GUIParams, 'resonatorY',  0, 3, 0.001).name( "<i>y</i><sub>resonator</sub>" ).onChange( (y) => { resonatorY = y; } );
 	gui.add( GUIParams, 'makeEyeLevel' ).name( 'Move resonator to eye level' );
+
+	cylindricalLensesControl = gui.add( GUIParams, 'cylindricalLenses' ).name( cylindricalLenses2String() );
 
 	// gui.add( GUIParams, 'meshRotX', -Math.PI, Math.PI ).name('Rot x').onChange( (a) => { meshRotationX = a; })
 	// gui.add( GUIParams, 'meshRotY', -Math.PI, Math.PI ).name('Rot y').onChange( (a) => { meshRotationY = a; })
@@ -1269,6 +1283,10 @@ function resonatorType2String() {
 		case 2: return 'Penrose cavity';
 		default: return 'Undefined';
 	}
+}
+
+function cylindricalLenses2String() {
+	return (raytracingSphereShaderMaterial.uniforms.cylindricalLenses.value?'Cylindrical lenses':'Spherical lenses');
 }
 
 function initMirrors() {
