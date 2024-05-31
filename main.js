@@ -81,6 +81,9 @@ let xMirrorX2OP = 0;
 let zMirrorZ1OP = 0;
 let zMirrorZ2OP = 0;
 
+let sphereCentre = new THREE.Vector3(0.75, 0., 0.25);
+let sphereRadius = 0.1;
+
 // lift the resonator up to eye level (in case of VR only)
 let resonatorY = 1.5;
 	
@@ -131,7 +134,7 @@ function init() {
 	// scene.background = new THREE.Color( 'skyblue' );
 	let windowAspectRatio = window.innerWidth / window.innerHeight;
 	camera = new THREE.PerspectiveCamera( fovScreen, windowAspectRatio, 0.1, 2*raytracingSphereRadius + 1 );
-	camera.position.z = 1;
+	camera.position.z = 0.4;
 	screenChanged();
 	
 	renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
@@ -445,6 +448,8 @@ function addRaytracingSphere() {
 			zMirrorsP: { value: zMirrorsP },
 			zMirrorsOP: { value: zMirrorsOP },
 			cylindricalLenses: { value: true },
+			sphereCentre: { value: sphereCentre },
+			sphereRadius: { value: sphereRadius },
 			backgroundTexture: { value: backgroundTexture },
 			focusDistance: { value: 10.0 },
 			apertureXHat: { value: new THREE.Vector3(1, 0, 0) },
@@ -462,6 +467,7 @@ function addRaytracingSphere() {
 			void main()	{
 				// projectionMatrix, modelViewMatrix, position -> passed in from Three.js
 				intersectionPoint = (modelMatrix * vec4(position, 1.0)).xyz;	// position.xyz;
+				
   				gl_Position = projectionMatrix
 					* modelViewMatrix
 					* vec4(position, 1.0);
@@ -511,6 +517,9 @@ function addRaytracingSphere() {
 			uniform float zMirrorsOP[mirrorsN2];
 
 			uniform bool cylindricalLenses;
+
+			uniform vec3 sphereCentre;
+			uniform float sphereRadius;
 
 			// background
 			uniform sampler2D backgroundTexture;
@@ -943,88 +952,89 @@ function addRaytracingSphere() {
 			}
 
 			// find the closest intersection in the ray's forward direction with either the x, y or z planes
+			// or any other objects (such as a red sphere)
 			// s: ray start point (will not be altered)
 			// d: ray direction
 			// intersectionPosition: initial value ignored; becomes the position of the intersection
 			// intersectionDistance: initial value ignored; becomes the distance to the closest intersection point
-			// intersectionPlaneIndex: initial value ignored; becomes the index of the z plane being intersected
-			// intersectionPlaneSetIndex: 0/1/2 if the intersection is with the x/y/z planes 
+			// objectSetIndex: 0/1/2 if the intersection is with the x/y/z planes, 3 if it is with coloured spheres
+			// objectIndex: initial value ignored; becomes the index of the object within the object set being intersected
 			// returns true if an intersection has been found
-			bool findNearestIntersectionWithMirrors(
+			bool findNearestIntersectionWithObjects(
 				vec3 s, 
 				vec3 d, 
 				in int startIntersectionPlaneIndex,
 				in int startIntersectionPlaneSetIndex,
 				out vec3 intersectionPosition,
 				out float intersectionDistance,
+				out int objectSetIndex,
+				out int objectIndex,
 				out float mirrorOpticalPower,
 				out vec3 mirrorPrincipalPoint,
-				out vec3 mirrorNormalHat,
-				out int intersectionPlaneIndex,
-				out int intersectionPlaneSetIndex
+				out vec3 mirrorNormalHat
 			) {
 				intersectionDistance = 1e20;	// this means there is no intersection, so far
 
 				// create space for the current...
 				vec3 ip;	// ... intersection point, ...
 				float id;	// ... intersection distance, ...
-				int ii;	// ... and intersection-plane index
+				int oi;	// ... and object index
 
 				// is there an intersection with the x mirrors?
-				if (findNearestIntersectionWithXMirrors(s, d, (startIntersectionPlaneSetIndex == 0)?startIntersectionPlaneIndex:-1, ip, id, ii)) {
+				if (findNearestIntersectionWithXMirrors(s, d, (startIntersectionPlaneSetIndex == 0)?startIntersectionPlaneIndex:-1, ip, id, oi)) {
 					// yes, there is an intersection with the x mirrors
 					intersectionPosition = ip;
 					intersectionDistance = id;
-					mirrorOpticalPower = xMirrorsOP[ii];
-					mirrorPrincipalPoint = xMirrorsP[ii];
+					mirrorOpticalPower = xMirrorsOP[oi];
+					mirrorPrincipalPoint = xMirrorsP[oi];
 					mirrorNormalHat = xHat;
-					intersectionPlaneIndex = ii;
-					intersectionPlaneSetIndex = 0;	// x mirrors
+					objectIndex = oi;
+					objectSetIndex = 0;	// x mirrors
 				}
 
 				// is there an intersection with the y mirrors?
-				if (findNearestIntersectionWithYMirrors(s, d, (startIntersectionPlaneSetIndex == 1)?startIntersectionPlaneIndex:-1, ip, id, ii)) {
+				if (findNearestIntersectionWithYMirrors(s, d, (startIntersectionPlaneSetIndex == 1)?startIntersectionPlaneIndex:-1, ip, id, oi)) {
 					// yes, there is an intersection with the y mirrors
 					// if there either no intersection already, or, if there is one, is it closer than the closest intersection so far?
 					if(id < intersectionDistance) {
 						// the intersection with the y mirrors is the closest one so far
 						intersectionPosition = ip;
 						intersectionDistance = id;
-						mirrorOpticalPower = yMirrorsOP[ii];
-						mirrorPrincipalPoint = yMirrorsP[ii];
+						mirrorOpticalPower = yMirrorsOP[oi];
+						mirrorPrincipalPoint = yMirrorsP[oi];
 						mirrorNormalHat = yHat;
-						intersectionPlaneIndex = ii;
-						intersectionPlaneSetIndex = 1;	// y mirrors
+						objectIndex = oi;
+						objectSetIndex = 1;	// y mirrors
 					}
 				}
 				
 				// is there an intersection with the z mirrors?
-				if (findNearestIntersectionWithZMirrors(s, d, (startIntersectionPlaneSetIndex == 2)?startIntersectionPlaneIndex:-1, ip, id, ii)) {
+				if (findNearestIntersectionWithZMirrors(s, d, (startIntersectionPlaneSetIndex == 2)?startIntersectionPlaneIndex:-1, ip, id, oi)) {
 					// yes, there is an intersection with the z mirrors
 					// if there either no intersection already, or, if there is one, is it closer than the closest intersection so far?
 					if(id < intersectionDistance) {
 						// the intersection with the z mirrors is the closest one so far
 						intersectionPosition = ip;
 						intersectionDistance = id;
-						mirrorOpticalPower = zMirrorsOP[ii];
-						mirrorPrincipalPoint = zMirrorsP[ii];
+						mirrorOpticalPower = zMirrorsOP[oi];
+						mirrorPrincipalPoint = zMirrorsP[oi];
 						mirrorNormalHat = zHat;
-						intersectionPlaneIndex = ii;
-						intersectionPlaneSetIndex = 2;	// z mirrors
+						objectIndex = oi;
+						objectSetIndex = 2;	// z mirrors
 					}
 				}
 
-				// // is there an intersection with the sphere?
-				// if( findNearestIntersectionWithSphere(s, d, vec3(0., 0., 0.), 0.2, ip, id) ) {
-				// 	// yes, there is an intersection with the sphere
-				// 	// if there either no intersection already, or, if there is one, is it closer than the closest intersection so far?
-				// 	if(id < intersectionDistance) {
-				// 		// the intersection with the z mirrors is the closest one so far
-				// 		intersectionPosition = ip;
-				// 		intersectionDistance = id;
-				// 		intersectionPlaneSetIndex = 3;	// sphere
-				// 	}
-				// }
+				// is there an intersection with the sphere?
+				if( findNearestIntersectionWithSphere(s, d, sphereCentre, sphereRadius, ip, id) ) {
+					// yes, there is an intersection with the sphere
+					// if there either no intersection already, or, if there is one, is it closer than the closest intersection so far?
+					if(id < intersectionDistance) {
+						// the intersection with the z mirrors is the closest one so far
+						intersectionPosition = ip;
+						intersectionDistance = id;
+						objectSetIndex = 3;	// sphere
+					}
+				}
 				
 				return (intersectionDistance < 1e20);
 			}
@@ -1056,20 +1066,20 @@ function addRaytracingSphere() {
 					float mop;
 					vec3 mp;
 					vec3 mNHat;
-					int ii = -1;
+					int oi = -1;
 					int si = -1;
 					int tl = maxTraceLevel;	// max trace level
 					while(
 						(tl-- > 0) &&
-						findNearestIntersectionWithMirrors(s, d, 
-							ii, si,
+						findNearestIntersectionWithObjects(s, d, 
+							oi, si,
 							ip,	// out vec3 intersectionPosition
 							id,	// out float intersectionDistance
+							si,	// out int objectSetIndex
+							oi,	// out int objectIndex
 							mop,	// out float mirrorOpticalPower
 							mp,	// out vec3 mirrorPrincipalPoint
-							mNHat,	// out vec3 mirrorNormalHat	
-							ii,	// out int intersectionPlaneIndex
-							si	// out int intersectionPlaneSetIndex
+							mNHat	// out vec3 mirrorNormalHat	
 						)
 					) {
 						if(si == 3) { 
@@ -1140,6 +1150,7 @@ function createGUI() {
 			loadBackgroundImage();
 			backgroundControl.name( background2String() );	
 		},
+		sphereRadius: sphereRadius,
 		resonatorType: function() {
 			resonatorType = (resonatorType + 1) % 3;
 			resonatorTypeControl.name( resonatorType2String() );
@@ -1192,6 +1203,8 @@ function createGUI() {
 	gui.add( GUIParams, 'makeEyeLevel' ).name( 'Move resonator to eye level' );
 
 	cylindricalLensesControl = gui.add( GUIParams, 'cylindricalLenses' ).name( cylindricalLenses2String() );
+
+	gui.add( GUIParams, 'sphereRadius', 0, 1 ).name( "<i>r</i><sub>sphere</sub>" ).onChange( (r) => { raytracingSphereShaderMaterial.uniforms.sphereRadius.value = r; } );
 
 	// gui.add( GUIParams, 'meshRotX', -Math.PI, Math.PI ).name('Rot x').onChange( (a) => { meshRotationX = a; })
 	// gui.add( GUIParams, 'meshRotY', -Math.PI, Math.PI ).name('Rot y').onChange( (a) => { meshRotationY = a; })
