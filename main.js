@@ -85,7 +85,7 @@ let sphereCentre = new THREE.Vector3(0.75, 0., 0.25);
 let sphereRadius = 0.1;
 
 // lift the resonator up to eye level (in case of VR only)
-let resonatorY = 1.5;
+let resonatorY = 0.0;
 	
 let fovScreen = 68;
 
@@ -292,6 +292,10 @@ function updateUniforms() {
 	raytracingSphereShaderMaterial.uniforms.yMirrorsN.value = yMirrorsN;
 	raytracingSphereShaderMaterial.uniforms.zMirrorsN.value = zMirrorsN;
 
+	raytracingSphereShaderMaterial.uniforms.sphereCentre.value.x = sphereCentre.x;
+	raytracingSphereShaderMaterial.uniforms.sphereCentre.value.y = sphereCentre.y;
+	raytracingSphereShaderMaterial.uniforms.sphereCentre.value.z = sphereCentre.z;
+
 	// mesh.rotation.y = -Math.atan2(camera.position.z, camera.position.x);
 	// mesh.rotation.z = meshRotationZ;
 	
@@ -448,7 +452,7 @@ function addRaytracingSphere() {
 			zMirrorsP: { value: zMirrorsP },
 			zMirrorsOP: { value: zMirrorsOP },
 			cylindricalLenses: { value: true },
-			sphereCentre: { value: sphereCentre },
+			sphereCentre: { value: new THREE.Vector3(0, 0, 0) },
 			sphereRadius: { value: sphereRadius },
 			backgroundTexture: { value: backgroundTexture },
 			focusDistance: { value: 10.0 },
@@ -1151,6 +1155,9 @@ function createGUI() {
 			backgroundControl.name( background2String() );	
 		},
 		sphereRadius: sphereRadius,
+		sphereCentreX: sphereCentre.x,
+		sphereCentreY: sphereCentre.y,
+		sphereCentreZ: sphereCentre.z,
 		resonatorType: function() {
 			resonatorType = (resonatorType + 1) % 3;
 			resonatorTypeControl.name( resonatorType2String() );
@@ -1204,7 +1211,10 @@ function createGUI() {
 
 	cylindricalLensesControl = gui.add( GUIParams, 'cylindricalLenses' ).name( cylindricalLenses2String() );
 
-	gui.add( GUIParams, 'sphereRadius', 0, 1 ).name( "<i>r</i><sub>sphere</sub>" ).onChange( (r) => { raytracingSphereShaderMaterial.uniforms.sphereRadius.value = r; } );
+	gui.add( GUIParams, 'sphereCentreX', -5, 5 ).name( "<i>x</i><sub>sphere</sub>" ).onChange( (x) => { sphereCentre.x = x; } );
+	gui.add( GUIParams, 'sphereCentreY',  0, 5 ).name( "<i>y</i><sub>sphere</sub>" ).onChange( (y) => { sphereCentre.y = y; } );
+	gui.add( GUIParams, 'sphereCentreZ', -5, 5 ).name( "<i>z</i><sub>sphere</sub>" ).onChange( (z) => { sphereCentre.z = z; } );
+	gui.add( GUIParams, 'sphereRadius',   0, 1 ).name( "<i>r</i><sub>sphere</sub>" ).onChange( (r) => { raytracingSphereShaderMaterial.uniforms.sphereRadius.value = r; } );
 
 	// gui.add( GUIParams, 'meshRotX', -Math.PI, Math.PI ).name('Rot x').onChange( (a) => { meshRotationX = a; })
 	// gui.add( GUIParams, 'meshRotY', -Math.PI, Math.PI ).name('Rot y').onChange( (a) => { meshRotationY = a; })
