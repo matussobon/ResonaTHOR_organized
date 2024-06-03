@@ -107,7 +107,7 @@ let info;
 // the menu
 let gui;
 let GUIParams;
-let autofocusControl, focusDistanceControl, resonatorTypeControl, opz0Control, opz1Control, z0Control, z1Control, resonatorYControl, cylindricalLensesControl, backgroundControl, controlsVisibleControl, showSphereControl;
+let autofocusControl, focusDistanceControl, resonatorTypeControl, opz0Control, opz1Control, z0Control, z1Control, resonatorYControl, cylindricalLensesControl, backgroundControl, vrControlsVisibleControl, showSphereControl;
 
 let GUIMesh;
 let showGUIMesh;
@@ -165,6 +165,7 @@ function init() {
 	// check if VR is supported (see https://developer.mozilla.org/en-US/docs/Web/API/XRSystem/isSessionSupported)...
 	// if (navigator.xr) {
 	if ( 'xr' in navigator ) {
+		// renderer.xr.enabled = false;
 		// navigator.xr.isSessionSupported("immersive-vr").then((isSupported) => {
 		navigator.xr.isSessionSupported( 'immersive-vr' ).then( function ( supported ) {
 			if (supported) {
@@ -457,6 +458,7 @@ function addRaytracingSphere() {
 			zMirrorsP: { value: zMirrorsP },
 			zMirrorsOP: { value: zMirrorsOP },
 			cylindricalLenses: { value: true },
+			reflectionCoefficient: { value: 0.9 },
 			sphereCentre: { value: new THREE.Vector3(0, 0, 0) },
 			sphereRadius: { value: sphereRadius },
 			showSphere: { value: false },
@@ -527,6 +529,7 @@ function addRaytracingSphere() {
 			uniform float zMirrorsOP[mirrorsN2];
 
 			uniform bool cylindricalLenses;
+			uniform float reflectionCoefficient;
 
 			uniform vec3 sphereCentre;
 			uniform float sphereRadius;
@@ -1105,7 +1108,7 @@ function addRaytracingSphere() {
 								// p2i.z = 0.0;
 							}
 							lensOrMirrorDeflect(d, p2i, mNHat, mop, -1., false);
-							b *= vec4(0.9, 0.9, 0.9, 1.);
+							b *= vec4(reflectionCoefficient, reflectionCoefficient, reflectionCoefficient, 1.);
 							// color = vec4(float(si)/2., 0., float(ii)/2., 1.);
 						}
 					}
@@ -1139,7 +1142,7 @@ function createGUI() {
 	// GUIMesh = new HTMLMesh( gui.domElement );	// placeholder
 
 	GUIParams = {
-		maxTraceLevel: raytracingSphereShaderMaterial.uniforms.maxTraceLevel.value,
+		noOfReflections: raytracingSphereShaderMaterial.uniforms.maxTraceLevel.value - 2,
 		'Horiz. FOV (&deg;)': fovScreen,
 		'Aperture radius': apertureRadius,
 		'tan<sup>-1</sup>(focus. dist.)': atanFocusDistance,
@@ -1152,9 +1155,9 @@ function createGUI() {
 		// 'Autofocus': autofocus,
 		'Point forward (in -<b>z</b> direction)': pointForward,
 		'Show/hide info': toggleInfoVisibility,
-		controlsVisible: function() {
+		vrControlsVisible: function() {
 			GUIMesh.visible = !GUIMesh.visible;
-			controlsVisibleControl.name( 'Controls '+(GUIMesh.visible?'visible':'hidden') );
+			vrControlsVisibleControl.name( guiMeshVisible2String() );
 		},
 		background: function() {
 			background = (background + 1) % 5;
@@ -1200,13 +1203,14 @@ function createGUI() {
 			raytracingSphereShaderMaterial.uniforms.cylindricalLenses.value = !raytracingSphereShaderMaterial.uniforms.cylindricalLenses.value;
 			cylindricalLensesControl.name( cylindricalLenses2String() );
 		},
+		reflectionCoefficient9s: -Math.log10(1-raytracingSphereShaderMaterial.uniforms.reflectionCoefficient.value),
 		makeEyeLevel: function() { resonatorY = camera.position.y; resonatorYControl.setValue(resonatorY); }
 		// meshRotX: meshRotationX,
 		// meshRotY: meshRotationY,
 		// meshRotZ: meshRotationZ
 	}
 
-	gui.add( GUIParams, 'maxTraceLevel', 1, 200, 1 ).name( "max. TL" ).onChange( (mtl) => {raytracingSphereShaderMaterial.uniforms.maxTraceLevel.value = mtl; } );
+	gui.add( GUIParams, 'noOfReflections', 0, 200, 1 ).name( "#reflections" ).onChange( (r) => {raytracingSphereShaderMaterial.uniforms.maxTraceLevel.value = r + 2; } );
 	resonatorTypeControl = gui.add( GUIParams, 'resonatorType' ).name( resonatorType2String() );
 	gui.add( GUIParams, 'opx1', -10, 10, 0.001 ).name( "OP<sub><i>x</i>,1</sub>" ).onChange( (o) => { xMirrorX1OP = o; } );
 	gui.add( GUIParams, 'opx2', -10, 10, 0.001 ).name( "OP<sub><i>x</i>,2</sub>" ).onChange( (o) => { xMirrorX2OP = o; } );
@@ -1226,7 +1230,7 @@ function createGUI() {
 
 	resonatorYControl = gui.add( GUIParams, 'resonatorY',  0, 3, 0.001).name( "<i>y</i><sub>resonator</sub>" ).onChange( (y) => { resonatorY = y; } );
 	gui.add( GUIParams, 'makeEyeLevel' ).name( 'Move resonator to eye level' );
-
+	gui.add( GUIParams, 'reflectionCoefficient9s', 0, 3, 0.1 ).name( "-log<sub>10</sub>(1-<i>R</i>)" ).onChange( (l) => { raytracingSphereShaderMaterial.uniforms.reflectionCoefficient.value = 1-Math.pow(10, -l); } );
 	cylindricalLensesControl = gui.add( GUIParams, 'cylindricalLenses' ).name( cylindricalLenses2String() );
 
 	gui.add( GUIParams, 'sphereCentreX', -5, 5 ).name( "<i>x</i><sub>sphere</sub>" ).onChange( (x) => { sphereCentre.x = x; } );
@@ -1263,7 +1267,7 @@ function createGUI() {
 	backgroundControl = gui.add( GUIParams, 'background' ).name( background2String() );
 
 	if(renderer.xr.enabled) {
-		controlsVisibleControl = gui.add( GUIParams, 'controlsVisible' );
+		vrControlsVisibleControl = gui.add( GUIParams, 'vrControlsVisible' );
 	}
 	// folderVirtualCamera.close();
 
@@ -1279,7 +1283,7 @@ function createGUI() {
 	// create the GUI mesh at the end to make sure that it includes all controls
 	GUIMesh = new HTMLMesh( gui.domElement );
 	GUIMesh.visible = false;
-	controlsVisibleControl.name( 'Controls '+(GUIMesh.visible?'visible':'hidden') );
+	vrControlsVisibleControl.name( guiMeshVisible2String() );	// this can be called only after GUIMesh has been created
 
 	enableDisableResonatorControls();
 }
@@ -1334,6 +1338,10 @@ function cylindricalLenses2String() {
 
 function showSphere2String() {
 	return (raytracingSphereShaderMaterial.uniforms.showSphere.value?'Sphere shown':'Sphere hidden');
+}
+
+function guiMeshVisible2String() {
+	return 'VR controls '+(GUIMesh.visible?'visible':'hidden');
 }
 
 function initMirrors() {
@@ -1811,21 +1819,37 @@ function postStatus(text) {
 }
 
 function getInfoString() {
-	return `<br>Virtual camera<br>\n` +
-		`&nbsp;&nbsp;Position = (${camera.position.x.toPrecision(4)}, ${camera.position.y.toPrecision(4)}, ${camera.position.z.toPrecision(4)})<br>\n` +
-		`&nbsp;&nbsp;Horiz. FOV = ${fovScreen.toPrecision(4)}<br>\n` +
-		`&nbsp;&nbsp;Aperture radius = ${apertureRadius.toPrecision(4)}<br>\n` +
-		`&nbsp;&nbsp;Focussing distance = ${Math.tan(atanFocusDistance).toPrecision(4)}<br>\n` +
-		`&nbsp;&nbsp;Number of rays = ${noOfRays}\n` +
-		`<br><br>Stored photo description/name = ${storedPhotoDescription}\n` +
+	return '<h4>Resonator</h4>\n' +
+		`Resonator type = ${resonatorType2String()}, ${cylindricalLenses2String()}<br>\n` +
+		`OP<sub><i>x</i>,1</sub> = ${xMirrorX1OP.toPrecision(4)}, <i>f</i><sub><i>x</i>,1</sub> = ${(1/xMirrorX1OP).toPrecision(4)}<br>\n` +
+		`OP<sub><i>x</i>,2</sub> = ${xMirrorX2OP.toPrecision(4)}, <i>f</i><sub><i>x</i>,2</sub> = ${(1/xMirrorX2OP).toPrecision(4)}<br>\n` +
+		`OP<sub><i>z</i>,1</sub> = ${zMirrorZ1OP.toPrecision(4)}, <i>f</i><sub><i>z</i>,1</sub> = ${(1/zMirrorZ1OP).toPrecision(4)}<br>\n` +
+		`OP<sub><i>z</i>,2</sub> = ${zMirrorZ2OP.toPrecision(4)}, <i>f</i><sub><i>z</i>,2</sub> = ${(1/zMirrorZ2OP).toPrecision(4)}<br>\n` +
+		`<i>x</i><sub>1</sub> = ${x1.toPrecision(4)}<br>\n` +
+		`<i>x</i><sub>2</sub> = ${x2.toPrecision(4)}<br>\n` +
+		`<i>z</i><sub>1</sub> = ${z1.toPrecision(4)}<br>\n` +
+		`<i>z</i><sub>2</sub> = ${z2.toPrecision(4)}<br>\n` +
+		`<i>y</i><sub>resonator</sub> = ${resonatorY}<br>\n` +
+		`Reflection coefficient = ${raytracingSphereShaderMaterial.uniforms.reflectionCoefficient.value.toPrecision(4)}<br>\n` +
+		`Max. number of reflections = ${raytracingSphereShaderMaterial.uniforms.maxTraceLevel.value - 2}<br>\n` +
+		`<h4>Red sphere</h4>\n` +
+		`${showSphere2String()}<br>\n` +
+		`Centre = (${sphereCentre.x.toPrecision(4)}, ${sphereCentre.y.toPrecision(4)}, ${sphereCentre.z.toPrecision(4)})<br>\n` +
+		`<h4>Virtual camera<h4>\n` +
+		`Position = (${camera.position.x.toPrecision(4)}, ${camera.position.y.toPrecision(4)}, ${camera.position.z.toPrecision(4)})<br>\n` +
+		`Horiz. FOV = ${fovScreen.toPrecision(4)}<br>\n` +
+		`Aperture radius = ${apertureRadius.toPrecision(4)}<br>\n` +
+		`Focussing distance = ${Math.tan(atanFocusDistance).toPrecision(4)}<br>\n` +
+		`Number of rays = ${noOfRays}\n` +
+		`<h4>Stored photo</h4>\n` +
+		`Description/name = ${storedPhotoDescription}\n` +
 		'<h4>Background image information</h4>\n' +
 		getBackgroundInfo() + '<br>\n' +
 		// '<a href="https://www.flickr.com/photos/pano_philou/1041580126">"360-180 Glasgow University - Western Square"</a> by pano_philou<br>\n' +
 		'License: <a href="https://creativecommons.org/licenses/by-nc-sa/2.0/">CC BY-NC-SA 2.0 DEED</a><br>\n' +
 		// `<h4>${appName}</h4>\n` +
-		`<br><br>${appName} (University of Glasgow, <a href="https://github.com/jkcuk/${appName}">https://github.com/jkcuk/${appName}</a>) is ${appDescription}.`
+		`<br>${appName} (University of Glasgow, <a href="https://github.com/jkcuk/${appName}">https://github.com/jkcuk/${appName}</a>) is ${appDescription}.`
 		;
-		console.log("*");
 }
 
 function refreshInfo() {
