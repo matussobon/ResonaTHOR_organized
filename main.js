@@ -40,7 +40,7 @@ let raytracingSphereShaderMaterial;
 
 let background = 0;
 
-let resonatorType = 0;	// 0 = single canonical resonator in x direction, 1 = crossed canonical resonators in x and z directions, 2 = Penrose cavity
+let resonatorType = 1;	// 0 = single canonical resonator in x direction, 1 = crossed canonical resonators in x and z directions, 2 = Penrose cavity
 let mirrorsN2 = 4;	// max number of mirrors in each array
 
 let xMirrorsN;
@@ -214,7 +214,12 @@ function updateUniforms() {
 	GUIMesh.position.y = deltaY - 1;
 
 	switch(resonatorType) {
-		case 1:	// 1 = crossed canonical resonators in x and z directions
+		case 0:	// 0 = no resonator:
+			xMirrorsN = 0;
+			yMirrorsN = 0;
+			zMirrorsN = 0;
+			break;
+		case 2:	// 2 = crossed canonical resonators in x and z directions
 			xMirrorsN = 2;
 			yMirrorsN = 0;
 			zMirrorsN = 2;
@@ -239,7 +244,7 @@ function updateUniforms() {
 			zMirrorsZ[0] = z1; zMirrorsP[0].z = z1; zMirrorsOP[0] = zMirrorZ1OP;
 			zMirrorsZ[1] = z2; zMirrorsP[1].z = z2; zMirrorsOP[1] = zMirrorZ2OP;
 			break;
-		case 2:	// 2 = Penrose cavity
+		case 3:	// 3 = Penrose cavity
 			xMirrorsN = 4;
 			yMirrorsN = 0;
 			zMirrorsN = 4;
@@ -272,7 +277,7 @@ function updateUniforms() {
 			zMirrorsX1[3] = 2*x1; zMirrorsX2[3] = -2*x1; zMirrorsZ[3] = z4; zMirrorsP[3].z = z4; zMirrorsOP[3] = zMirrorZ2OP;	// the outer bottom mirror
 
 			break;
-		case 0:	// 0 = single canonical resonator in x direction
+		case 1:	// 1 = single canonical resonator in x direction
 		default:
 			xMirrorsN = 2;
 			yMirrorsN = 0;
@@ -454,7 +459,7 @@ function addRaytracingSphere() {
 			cylindricalLenses: { value: true },
 			sphereCentre: { value: new THREE.Vector3(0, 0, 0) },
 			sphereRadius: { value: sphereRadius },
-			showSphere: { value: true },
+			showSphere: { value: false },
 			backgroundTexture: { value: backgroundTexture },
 			focusDistance: { value: 10.0 },
 			apertureXHat: { value: new THREE.Vector3(1, 0, 0) },
@@ -1165,9 +1170,16 @@ function createGUI() {
 			showSphereControl.name( showSphere2String() );
 		},
 		resonatorType: function() {
-			resonatorType = (resonatorType + 1) % 3;
+			resonatorType = (resonatorType + 1) % 4;
 			resonatorTypeControl.name( resonatorType2String() );
 			enableDisableResonatorControls();
+			if(resonatorType == 3) {
+				// Penrose cavity
+				zMirrorZ1OP = Math.max(1, zMirrorZ1OP);
+				zMirrorZ2OP = Math.max(1, zMirrorZ2OP);
+				opz0Control.setValue( zMirrorZ1OP );
+				opz1Control.setValue( zMirrorZ2OP );
+			}
 			// createGUI();
 			// opz0Control.disable( resonatorType == 0 );
 			// opz1Control.disable( resonatorType == 0 );
@@ -1273,8 +1285,8 @@ function createGUI() {
 }
 
 function enableDisableResonatorControls() {
-	opz0Control.disable( resonatorType == 0 );
-	opz1Control.disable( resonatorType == 0 );
+	// opz0Control.disable( (resonatorType == 1) || (resonatorType == 0) );
+	// opz1Control.disable( (resonatorType == 1) || (resonatorType == 0) );
 	// z0Control.disable( resonatorType == 0 );
 	// z1Control.disable( resonatorType == 0 );
 }
@@ -1308,9 +1320,10 @@ function getBackgroundInfo() {
 
 function resonatorType2String() {
 	switch(resonatorType) {
-		case 0: return 'Canonical resonator';
-		case 1: return 'Crossed canonical resonators';
-		case 2: return 'Penrose cavity';
+		case 0: return 'No resonator';
+		case 1: return 'Canonical resonator';
+		case 2: return 'Crossed canonical resonators';
+		case 3: return 'Penrose cavity';
 		default: return 'Undefined';
 	}
 }
