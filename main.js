@@ -107,7 +107,7 @@ let info;
 // the menu
 let gui;
 let GUIParams;
-let autofocusControl, focusDistanceControl, resonatorTypeControl, opz0Control, opz1Control, z0Control, z1Control, resonatorYControl, cylindricalLensesControl, backgroundControl, controlsVisibleControl;
+let autofocusControl, focusDistanceControl, resonatorTypeControl, opz0Control, opz1Control, z0Control, z1Control, resonatorYControl, cylindricalLensesControl, backgroundControl, controlsVisibleControl, showSphereControl;
 
 let GUIMesh;
 let showGUIMesh;
@@ -454,6 +454,7 @@ function addRaytracingSphere() {
 			cylindricalLenses: { value: true },
 			sphereCentre: { value: new THREE.Vector3(0, 0, 0) },
 			sphereRadius: { value: sphereRadius },
+			showSphere: { value: true },
 			backgroundTexture: { value: backgroundTexture },
 			focusDistance: { value: 10.0 },
 			apertureXHat: { value: new THREE.Vector3(1, 0, 0) },
@@ -524,6 +525,7 @@ function addRaytracingSphere() {
 
 			uniform vec3 sphereCentre;
 			uniform float sphereRadius;
+			uniform bool showSphere;
 
 			// background
 			uniform sampler2D backgroundTexture;
@@ -1029,7 +1031,7 @@ function addRaytracingSphere() {
 				}
 
 				// is there an intersection with the sphere?
-				if( findNearestIntersectionWithSphere(s, d, sphereCentre, sphereRadius, ip, id) ) {
+				if( showSphere && findNearestIntersectionWithSphere(s, d, sphereCentre, sphereRadius, ip, id) ) {
 					// yes, there is an intersection with the sphere
 					// if there either no intersection already, or, if there is one, is it closer than the closest intersection so far?
 					if(id < intersectionDistance) {
@@ -1158,6 +1160,10 @@ function createGUI() {
 		sphereCentreX: sphereCentre.x,
 		sphereCentreY: sphereCentre.y,
 		sphereCentreZ: sphereCentre.z,
+		showSphere: function() {
+			raytracingSphereShaderMaterial.uniforms.showSphere.value = !raytracingSphereShaderMaterial.uniforms.showSphere.value;
+			showSphereControl.name( showSphere2String() );
+		},
 		resonatorType: function() {
 			resonatorType = (resonatorType + 1) % 3;
 			resonatorTypeControl.name( resonatorType2String() );
@@ -1215,6 +1221,7 @@ function createGUI() {
 	gui.add( GUIParams, 'sphereCentreY',  0, 5 ).name( "<i>y</i><sub>sphere</sub>" ).onChange( (y) => { sphereCentre.y = y; } );
 	gui.add( GUIParams, 'sphereCentreZ', -5, 5 ).name( "<i>z</i><sub>sphere</sub>" ).onChange( (z) => { sphereCentre.z = z; } );
 	gui.add( GUIParams, 'sphereRadius',   0, 1 ).name( "<i>r</i><sub>sphere</sub>" ).onChange( (r) => { raytracingSphereShaderMaterial.uniforms.sphereRadius.value = r; } );
+	showSphereControl = gui.add( GUIParams, 'showSphere' ).name( showSphere2String() );
 
 	// gui.add( GUIParams, 'meshRotX', -Math.PI, Math.PI ).name('Rot x').onChange( (a) => { meshRotationX = a; })
 	// gui.add( GUIParams, 'meshRotY', -Math.PI, Math.PI ).name('Rot y').onChange( (a) => { meshRotationY = a; })
@@ -1310,6 +1317,10 @@ function resonatorType2String() {
 
 function cylindricalLenses2String() {
 	return (raytracingSphereShaderMaterial.uniforms.cylindricalLenses.value?'Cylindrical lenses':'Spherical lenses');
+}
+
+function showSphere2String() {
+	return (raytracingSphereShaderMaterial.uniforms.showSphere.value?'Sphere shown':'Sphere hidden');
 }
 
 function initMirrors() {
