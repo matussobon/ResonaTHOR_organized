@@ -1203,14 +1203,15 @@ function createGUI() {
 			raytracingSphereShaderMaterial.uniforms.cylindricalLenses.value = !raytracingSphereShaderMaterial.uniforms.cylindricalLenses.value;
 			cylindricalLensesControl.name( cylindricalLenses2String() );
 		},
-		reflectionCoefficient9s: -Math.log10(1-raytracingSphereShaderMaterial.uniforms.reflectionCoefficient.value),
+		// reflectionCoefficient9s: -Math.log10(1-raytracingSphereShaderMaterial.uniforms.reflectionCoefficient.value),
+		reflectionLossDB: 10*Math.log10(1-raytracingSphereShaderMaterial.uniforms.reflectionCoefficient.value),
 		makeEyeLevel: function() { resonatorY = camera.position.y; resonatorYControl.setValue(resonatorY); }
 		// meshRotX: meshRotationX,
 		// meshRotY: meshRotationY,
 		// meshRotZ: meshRotationZ
 	}
 
-	gui.add( GUIParams, 'noOfReflections', 0, 200, 1 ).name( "max. #reflections" ).onChange( (r) => {raytracingSphereShaderMaterial.uniforms.maxTraceLevel.value = r + 2; } );
+	gui.add( GUIParams, 'noOfReflections', 0, 200, 1 ).name( '<div class="tooltip">Max. reflections<span class="tooltiptext">Maximum number of<br>simulated reflections<br>before the pixel is<br>coloured black</span></div>' ).onChange( (r) => {raytracingSphereShaderMaterial.uniforms.maxTraceLevel.value = r + 2; } );
 	resonatorTypeControl = gui.add( GUIParams, 'resonatorType' ).name( resonatorType2String() );
 	cylindricalLensesControl = gui.add( GUIParams, 'cylindricalLenses' ).name( cylindricalLenses2String() );
 	gui.add( GUIParams, 'opx1', -10, 10, 0.001 ).name( "OP<sub><i>x</i>,1</sub>" ).onChange( (o) => { xMirrorX1OP = o; } );
@@ -1231,8 +1232,8 @@ function createGUI() {
 
 	resonatorYControl = gui.add( GUIParams, 'resonatorY',  0, 3, 0.001).name( "<i>y</i><sub>resonator</sub>" ).onChange( (y) => { resonatorY = y; } );
 	gui.add( GUIParams, 'makeEyeLevel' ).name( 'Move resonator to eye level' );
-	gui.add( GUIParams, 'reflectionCoefficient9s', 0, 3, 0.1 ).name( '<div class="tooltip">Nines(<i>R</i>)<span class="tooltiptext">The number of <a href="https://en.m.wikipedia.org/wiki/Nines_(notation)">nines</a><br>in the reflection<br>coefficient, <i>R</i>.<br>E.g. Nines(0.99) = 2.</span></div> ' ).onChange( (l) => { raytracingSphereShaderMaterial.uniforms.reflectionCoefficient.value = 1-Math.pow(10, -l); } );
-	
+	// gui.add( GUIParams, 'reflectionCoefficient9s', 0, 3, 0.1 ).name( '<div class="tooltip">Nines(<i>R</i>)<span class="tooltiptext">The number of <a href="https://en.m.wikipedia.org/wiki/Nines_(notation)">nines</a><br>in the reflection<br>coefficient, <i>R</i>.<br>E.g. Nines(0.99) = 2.</span></div> ' ).onChange( (l) => { raytracingSphereShaderMaterial.uniforms.reflectionCoefficient.value = 1-Math.pow(10, -l); } );
+	gui.add( GUIParams, 'reflectionLossDB', -30, 0, 0.1 ).name( 'Refl. loss (dB)' ).onChange( (l) => { raytracingSphereShaderMaterial.uniforms.reflectionCoefficient.value = 1-Math.pow(10, 0.1*l); } );
 	// remove these for the moment
 	// gui.add( GUIParams, 'sphereCentreX', -5, 5 ).name( "<i>x</i><sub>sphere</sub>" ).onChange( (x) => { sphereCentre.x = x; } );
 	// gui.add( GUIParams, 'sphereCentreY',  0, 5 ).name( "<i>y</i><sub>sphere</sub>" ).onChange( (y) => { sphereCentre.y = y; } );
@@ -1325,20 +1326,20 @@ function getBackgroundInfo() {
 
 function resonatorType2String() {
 	switch(resonatorType) {
-		case 0: return 'No resonator';
-		case 1: return 'Canonical resonator';
-		case 2: return 'Crossed canonical resonators';
-		case 3: return 'Penrose cavity';
+		case 0: return '<div class="tooltip">No resonator<span class="tooltiptext">No mirrors</span></div>';
+		case 1: return '<div class="tooltip">Canonical resonator<span class="tooltiptext">Two planar mirrors<br>facing each other.</span></div>';
+		case 2: return '<div class="tooltip">Crossed canonical resonators<span class="tooltiptext">Two sets of<br>planar mirrors<br>facing each other.</span></div>';
+		case 3: return '<a href="https://en.wikipedia.org/wiki/Illumination_problem#Penrose_unilluminable_room">Penrose unilluminable room</a>';
 		default: return 'Undefined';
 	}
 }
 
 function cylindricalLenses2String() {
-	return (raytracingSphereShaderMaterial.uniforms.cylindricalLenses.value?'Cylindrical lenses':'Spherical lenses');
+	return (raytracingSphereShaderMaterial.uniforms.cylindricalLenses.value?'<div class="tooltip">Cylindrical mirrors<span class="tooltiptext">Cylindrical mirrors,<br>simulated as planar,<br>reflective, ideal<br>thin cylindrical<br>lenses</span></div>':'<div class="tooltip">Spherical mirrors<span class="tooltiptext">Spherical mirrors,<br>simulated as planar,<br>reflective, ideal<br>thin lenses</span></div>');
 }
 
 function showSphere2String() {
-	return (raytracingSphereShaderMaterial.uniforms.showSphere.value?'Sphere shown':'Sphere hidden');
+	return 'Red sphere '+(raytracingSphereShaderMaterial.uniforms.showSphere.value?'shown':'hidden');
 }
 
 function guiMeshVisible2String() {
@@ -1831,7 +1832,7 @@ function getInfoString() {
 		`<i>z</i><sub>1</sub> = ${z1.toPrecision(4)}<br>\n` +
 		`<i>z</i><sub>2</sub> = ${z2.toPrecision(4)}<br>\n` +
 		`<i>y</i><sub>resonator</sub> = ${resonatorY}<br>\n` +
-		`Reflection coefficient = ${raytracingSphereShaderMaterial.uniforms.reflectionCoefficient.value.toPrecision(4)}<br>\n` +
+		`Reflection coefficient = ${raytracingSphereShaderMaterial.uniforms.reflectionCoefficient.value.toPrecision(4)} (reflection loss = ${(10*Math.log10(1-raytracingSphereShaderMaterial.uniforms.reflectionCoefficient.value)).toPrecision(4)} dB)<br>\n` +
 		`Max. number of reflections = ${raytracingSphereShaderMaterial.uniforms.maxTraceLevel.value - 2}<br>\n` +
 		`<h4>Red sphere</h4>\n` +
 		`${showSphere2String()}<br>\n` +
