@@ -107,7 +107,7 @@ let info;
 // the menu
 let gui;
 let GUIParams;
-let autofocusControl, focusDistanceControl, resonatorTypeControl, opz0Control, opz1Control, z0Control, z1Control, resonatorYControl, cylindricalLensesControl, backgroundControl, vrControlsVisibleControl, showSphereControl;
+let autofocusControl, focusDistanceControl, resonatorTypeControl, mirrorTypeControl, opz0Control, opz1Control, z0Control, z1Control, resonatorYControl, cylindricalMirrorsControl, backgroundControl, vrControlsVisibleControl, showSphereControl;
 
 let GUIMesh;
 let showGUIMesh;
@@ -457,7 +457,8 @@ function addRaytracingSphere() {
 			zMirrorsY2: { value: zMirrorsY2 },	// {y2[0], y2[1], ...}
 			zMirrorsP: { value: zMirrorsP },
 			zMirrorsOP: { value: zMirrorsOP },
-			cylindricalLenses: { value: true },
+			// cylindricalMirrors: { value: true },
+			mirrorType: { value: 1 },
 			reflectionCoefficient: { value: 0.9 },
 			sphereCentre: { value: new THREE.Vector3(0, 0, 0) },
 			sphereRadius: { value: sphereRadius },
@@ -528,7 +529,8 @@ function addRaytracingSphere() {
 			uniform vec3 zMirrorsP[mirrorsN2];
 			uniform float zMirrorsOP[mirrorsN2];
 
-			uniform bool cylindricalLenses;
+			// uniform bool cylindricalMirrors;
+			uniform int mirrorType;
 			uniform float reflectionCoefficient;
 
 			uniform vec3 sphereCentre;
@@ -1103,7 +1105,8 @@ function addRaytracingSphere() {
 						} else {
 							s = ip;
 							vec3 p2i = s - mp;
-							if(cylindricalLenses) {
+							// if(cylindricalMirrors) {
+							if(mirrorType == 1) {
 								p2i.y = 0.0;
 								// p2i.z = 0.0;
 							}
@@ -1189,6 +1192,10 @@ function createGUI() {
 			// z0Control.disable( resonatorType == 0 );
 			// z1Control.disable( resonatorType == 0 );
 		},
+		mirrorType: function() {
+			raytracingSphereShaderMaterial.uniforms.mirrorType.value = (raytracingSphereShaderMaterial.uniforms.mirrorType.value + 1) % 2;
+			mirrorTypeControl.name( mirrorType2String() );
+		},
 		// optical powers
 		opx1: xMirrorX1OP,
 		opx2: xMirrorX2OP,
@@ -1199,9 +1206,9 @@ function createGUI() {
 		z1: z1,
 		z2: z2,
 		resonatorY: resonatorY,
-		cylindricalLenses: function() {
-			raytracingSphereShaderMaterial.uniforms.cylindricalLenses.value = !raytracingSphereShaderMaterial.uniforms.cylindricalLenses.value;
-			cylindricalLensesControl.name( cylindricalLenses2String() );
+		cylindricalMirrors: function() {
+			raytracingSphereShaderMaterial.uniforms.cylindricalMirrors.value = !raytracingSphereShaderMaterial.uniforms.cylindricalMirrors.value;
+			cylindricalMirrorsControl.name( cylindricalMirrors2String() );
 		},
 		// reflectionCoefficient9s: -Math.log10(1-raytracingSphereShaderMaterial.uniforms.reflectionCoefficient.value),
 		reflectionLossDB: 10*Math.log10(1-raytracingSphereShaderMaterial.uniforms.reflectionCoefficient.value),
@@ -1211,9 +1218,10 @@ function createGUI() {
 		// meshRotZ: meshRotationZ
 	}
 
-	gui.add( GUIParams, 'noOfReflections', 0, 200, 1 ).name( '<div class="tooltip">Max. reflections<span class="tooltiptext">Maximum number of<br>simulated reflections<br>before the pixel is<br>coloured black</span></div>' ).onChange( (r) => {raytracingSphereShaderMaterial.uniforms.maxTraceLevel.value = r + 2; } );
+	gui.add( GUIParams, 'noOfReflections', 0, 200, 1 ).name( 'Max. reflections' ).onChange( (r) => {raytracingSphereShaderMaterial.uniforms.maxTraceLevel.value = r + 2; } );
 	resonatorTypeControl = gui.add( GUIParams, 'resonatorType' ).name( resonatorType2String() );
-	cylindricalLensesControl = gui.add( GUIParams, 'cylindricalLenses' ).name( cylindricalLenses2String() );
+	mirrorTypeControl = gui.add( GUIParams, 'mirrorType' ).name( mirrorType2String() );
+	// cylindricalMirrorsControl = gui.add( GUIParams, 'cylindricalMirrors' ).name( cylindricalMirrors2String() );
 	gui.add( GUIParams, 'opx1', -10, 10, 0.001 ).name( "OP<sub><i>x</i>,1</sub>" ).onChange( (o) => { xMirrorX1OP = o; } );
 	gui.add( GUIParams, 'opx2', -10, 10, 0.001 ).name( "OP<sub><i>x</i>,2</sub>" ).onChange( (o) => { xMirrorX2OP = o; } );
 	// if(resonatorType != 0) {
@@ -1326,17 +1334,36 @@ function getBackgroundInfo() {
 
 function resonatorType2String() {
 	switch(resonatorType) {
-		case 0: return '<div class="tooltip">No resonator<span class="tooltiptext">No mirrors</span></div>';
-		case 1: return '<div class="tooltip">Canonical resonator<span class="tooltiptext">Two planar mirrors<br>facing each other.</span></div>';
-		case 2: return '<div class="tooltip">Crossed canonical resonators<span class="tooltiptext">Two sets of<br>planar mirrors<br>facing each other.</span></div>';
-		case 3: return '<a href="https://en.wikipedia.org/wiki/Illumination_problem#Penrose_unilluminable_room">Penrose unilluminable room</a>';
+		case 0: return 'No resonator';	// '<div class="tooltip">No resonator<span class="tooltiptext">No mirrors</span></div>';
+		case 1: return 'Canonical resonator';	// '<div class="tooltip">Canonical resonator<span class="tooltiptext">Two planar mirrors<br>facing each other.</span></div>';
+		case 2: return 'Crossed canonical resonators';	// '<div class="tooltip">Crossed canonical resonators<span class="tooltiptext">Two sets of<br>planar mirrors<br>facing each other.</span></div>';
+		case 3: return 'Penrose unilluminable room';	// '<a href="https://en.wikipedia.org/wiki/Illumination_problem#Penrose_unilluminable_room">Penrose unilluminable room</a>';
 		default: return 'Undefined';
 	}
 }
 
-function cylindricalLenses2String() {
-	return (raytracingSphereShaderMaterial.uniforms.cylindricalLenses.value?'<div class="tooltip">Cylindrical mirrors<span class="tooltiptext">Cylindrical mirrors,<br>simulated as planar,<br>reflective, ideal<br>thin cylindrical<br>lenses</span></div>':'<div class="tooltip">Spherical mirrors<span class="tooltiptext">Spherical mirrors,<br>simulated as planar,<br>reflective, ideal<br>thin lenses</span></div>');
+function resonatorTypeInfo() {
+	switch(resonatorType) {
+		case 0: return 'no mirrors';
+		case 1: return 'two planar mirrors facing each other';
+		case 2: return 'two sets of planar mirrors facing each other';
+		case 3: return '<a href="https://en.wikipedia.org/wiki/Illumination_problem#Penrose_unilluminable_room">https://en.wikipedia.org/wiki/Illumination_problem#Penrose_unilluminable_room</a>';
+		default: return 'Undefined';
+	}
 }
+
+function mirrorType2String() {
+	switch(raytracingSphereShaderMaterial.uniforms.mirrorType.value) {
+		case 0: return 'Spherical, ideal, thin, imaging, mirrors';
+		case 1: return 'Cylindrical, ideal, thin, imaging, mirrors';
+		default: return 'Undefined';
+	}
+}
+
+// function cylindricalMirrors2String() {
+// 	return (raytracingSphereShaderMaterial.uniforms.cylindricalMirrors.value?'Cylindrical mirrors':'Spherical mirrors');
+// 	// return (raytracingSphereShaderMaterial.uniforms.cylindricalMirrors.value?'<div class="tooltip">Cylindrical mirrors<span class="tooltiptext">Cylindrical mirrors,<br>simulated as planar,<br>reflective, ideal<br>thin cylindrical<br>lenses</span></div>':'<div class="tooltip">Spherical mirrors<span class="tooltiptext">Spherical mirrors,<br>simulated as planar,<br>reflective, ideal<br>thin lenses</span></div>');
+// }
 
 function showSphere2String() {
 	return 'Red sphere '+(raytracingSphereShaderMaterial.uniforms.showSphere.value?'shown':'hidden');
@@ -1822,7 +1849,9 @@ function postStatus(text) {
 
 function getInfoString() {
 	return '<h4>Resonator</h4>\n' +
-		`Resonator type = ${resonatorType2String()}, ${cylindricalLenses2String()}<br>\n` +
+		`Resonator type = ${resonatorType2String()} (${resonatorTypeInfo()})<br>\n`+
+		`Mirror type = ${mirrorType2String()}<br>\n` +
+		// `${cylindricalMirrors2String()}<br>\n` +
 		`OP<sub><i>x</i>,1</sub> = ${xMirrorX1OP.toPrecision(4)}, <i>f</i><sub><i>x</i>,1</sub> = ${(1/xMirrorX1OP).toPrecision(4)}<br>\n` +
 		`OP<sub><i>x</i>,2</sub> = ${xMirrorX2OP.toPrecision(4)}, <i>f</i><sub><i>x</i>,2</sub> = ${(1/xMirrorX2OP).toPrecision(4)}<br>\n` +
 		`OP<sub><i>z</i>,1</sub> = ${zMirrorZ1OP.toPrecision(4)}, <i>f</i><sub><i>z</i>,1</sub> = ${(1/zMirrorZ1OP).toPrecision(4)}<br>\n` +
@@ -1833,11 +1862,11 @@ function getInfoString() {
 		`<i>z</i><sub>2</sub> = ${z2.toPrecision(4)}<br>\n` +
 		`<i>y</i><sub>resonator</sub> = ${resonatorY}<br>\n` +
 		`Reflection coefficient = ${raytracingSphereShaderMaterial.uniforms.reflectionCoefficient.value.toPrecision(4)} (reflection loss = ${(10*Math.log10(1-raytracingSphereShaderMaterial.uniforms.reflectionCoefficient.value)).toPrecision(4)} dB)<br>\n` +
-		`Max. number of reflections = ${raytracingSphereShaderMaterial.uniforms.maxTraceLevel.value - 2}<br>\n` +
+		`<div class="tooltip">Max. number of reflections<span class="tooltiptext">Maximum number of<br>simulated reflections<br>before the pixel is<br>coloured black</span></div> = ${raytracingSphereShaderMaterial.uniforms.maxTraceLevel.value - 2}<br>\n` +
 		`<h4>Red sphere</h4>\n` +
 		`${showSphere2String()}<br>\n` +
 		`Centre = (${sphereCentre.x.toPrecision(4)}, ${sphereCentre.y.toPrecision(4)}, ${sphereCentre.z.toPrecision(4)})<br>\n` +
-		`<h4>Virtual camera<h4>\n` +
+		`<h4>Virtual camera</h4>\n` +
 		`Position = (${camera.position.x.toPrecision(4)}, ${camera.position.y.toPrecision(4)}, ${camera.position.z.toPrecision(4)})<br>\n` +
 		`Horiz. FOV = ${fovScreen.toPrecision(4)}<br>\n` +
 		`Aperture radius = ${apertureRadius.toPrecision(4)}<br>\n` +
