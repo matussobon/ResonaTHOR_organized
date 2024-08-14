@@ -1,4 +1,4 @@
-import { postStatus } from "./statusfunctions";
+import { postStatus } from "./statusfunctions.js";
 
 function createVideoFeeds() {
   // create the video stream for the user-facing camera first, as some devices (such as my iPad), which have both cameras,
