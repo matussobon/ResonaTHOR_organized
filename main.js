@@ -49,8 +49,12 @@ import {
 } from "./PhotoFunctions.js";
 import { addOrbitControls, pointForward } from "./CameraFunctions.js";
 
-import vertexShaderCode from "./vertex_shader_test.glsl";
-import fragmentShaderCode from "./fragment_shader_test.glsl";
+const responseFragment = await fetch("./fragment_shader_test.glsl");
+const fragmentShaderCode = await responseFragment.text();
+
+const responseVertex = await fetch("./vertex_shader_test.glsl");
+const vertexShaderCode = await responseVertex.text();
+
 //https://www.youtube.com/watch?v=RDughHM9qoE
 //https://www.npmjs.com/package/vite-plugin-glsl
 
