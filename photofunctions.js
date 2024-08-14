@@ -1,5 +1,5 @@
-import { postStatus } from "./statusfunctions";
-import { getInfoString } from "./infofunctions";
+import { postStatus } from "./statusfunctions.js";
+import { getInfoString } from "./infofunctions.js";
 
 let appName = "ResonaTHOR";
 
