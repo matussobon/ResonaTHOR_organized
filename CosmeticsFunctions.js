@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { postStatus } from "./statusFunctions";
+import { postStatus } from "./statusfunctions";
 
 //bg = background
 //bgTxtr = backgroundTexture

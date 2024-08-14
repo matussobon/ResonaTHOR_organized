@@ -33,21 +33,21 @@ import {
   createInfo,
   refreshInfo,
   toggleInfoVisibility,
-} from "./InfoFunctions.js";
+} from "./infofunctions.js";
 import {
   postStatus,
   createStatus,
   screenChanged,
   onWindowResize,
-} from "./statusFunctions.js";
-import { loadBackgroundImage, toggleFullscreen } from "./CosmeticsFunctions.js";
+} from "./statusfunctions.js";
+import { loadBackgroundImage, toggleFullscreen } from "./cosmeticsfunctions.js";
 import {
   takePhoto,
   showStoredPhoto,
   showLivePhoto,
   deleteStoredPhoto,
-} from "./PhotoFunctions.js";
-import { addOrbitControls, pointForward } from "./CameraFunctions.js";
+} from "./photofunctions.js";
+import { addOrbitControls, pointForward } from "./camerafunctions.js";
 
 const responseFragment = await fetch("./fragment_shader_test.glsl");
 const fragmentShaderCode = await responseFragment.text();

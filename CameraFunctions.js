@@ -1,5 +1,5 @@
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import { postStatus } from "./statusFunctions";
+import { postStatus } from "./statusfunctions";
 
 //domElement was renderer
 export function addOrbitControls(camera, domElement) {
